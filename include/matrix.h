@@ -66,7 +66,7 @@ namespace std {
                 /**
                  * @brief Destroy the matrix object.
                  */
-                ~matrix() { delete[] data; }
+                //~matrix() { delete[] data; }
 
                 A& operator()(int row, int column); // Access the element at the specified row and column
                 matrix<A> operator=(matrix<A> other); // Create a new matrix object and assign it the value of another matrix object
