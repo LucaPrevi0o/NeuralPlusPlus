@@ -9,10 +9,10 @@ int main(int argc, char **argv) {
 
         network test(
             std::neural::network::layer(3, new std::neural::activation::Sigmoid()),
-            std::neural::network::layer(2, new std::neural::activation::Sigmoid()),
-            std::neural::network::layer(3, new std::neural::activation::Sigmoid()),
             std::neural::network::layer(4, new std::neural::activation::Sigmoid()),
-            std::neural::network::layer(1, new std::neural::activation::Sigmoid())
+            std::neural::network::layer(2, new std::neural::activation::Sigmoid()),
+            std::neural::network::layer(5, new std::neural::activation::Sigmoid()),
+            std::neural::network::layer(3, new std::neural::activation::Sigmoid())
         );
     
         for (int i = 0; i < test.size() - 1; i++) {
