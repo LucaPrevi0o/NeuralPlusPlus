@@ -408,7 +408,7 @@ std::data::matrix<A> std::data::matrix<A>::operator*(std::data::matrix<A> other)
     printf("(%d %d) -> ", other.rows, other.columns);
     if (columns != other.rows) throw "Invalid matrix sizes";
     printf("res.size = (%d %d)\n", rows, other.columns);
-    std::data::matrix<A> result(rows, other.columns);
+    std::data::matrix<A> result = MATRIX_NULL(rows, other.columns);
     for (int i = 0; i < rows; i++) 
         for (int j = 0; j < other.columns; j++) 
             for (int k = 0; k < columns; k++) result.data[i * result.columns + j] += data[i * columns + k] * other(k, j);
