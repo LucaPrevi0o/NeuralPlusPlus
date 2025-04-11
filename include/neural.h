@@ -254,6 +254,8 @@ namespace std {
                 Function *activations; // Activation functions of the network
                 int num_layers; // Size of the network
 
+                std::data::matrix<float> compute_layer(int index) { return std::data::T(std::data::T(layers[index]) * weights[index] + biases[index]); }
+
             public:
 
                 /**
@@ -288,6 +290,7 @@ namespace std {
                 template<typename... Args>
                 network backpropagate(float learning_rate, const ParametricFunction *loss_function, Args... expected_output) {
 
+                    printf("debubìg\n");
                     float expected_data[] = { expected_output... };
                     int expected_size = sizeof...(expected_output);
 
@@ -299,7 +302,7 @@ namespace std {
                     for (int i = n.num_layers - 2; i >= 0; i--) {
 
                         printf("\nbackpropagation: layer %d\n", i);
-                        grad *= activations[i].df(std::data::T(layers[i]) * weights[i] + biases[i]); // Compute gradient
+                        grad *= activations[i].df(compute_layer(i)); // Compute gradient
                         printf("debug\n");
                         n.weights[i - 1] -= std::data::T(learning_rate * (grad * std::data::T(layers[i - 1]))); // Update weights
                         printf("debug\n");
@@ -342,8 +345,8 @@ std::neural::network::network(Args... args) : num_layers(sizeof...(args)) {
 
     for (int i = 0; i < num_layers - 1; i++) {
         
-        biases[i] = std::data::matrix<float>(1, sizes[i + 1].neurons);
-        for (int j = 0; j < sizes[i + 1].neurons; j++) biases[i](0, j) = ((float)rand() / RAND_MAX) * 2 - 1;
+        biases[i] = std::data::matrix<float>(sizes[i + 1].neurons, 1);
+        for (int j = 0; j < sizes[i + 1].neurons; j++) biases[i](j, 0) = ((float)rand() / RAND_MAX) * 2 - 1;
     }
 
     for (int i = 0; i < num_layers - 1; i++) activations[i] = sizes[i].activation_function;
@@ -414,7 +417,7 @@ std::neural::network std::neural::network::compute(Args... input) {
     network n(*this);
     if (input_size != n.layers[0].size()[0]) throw "Input size does not match the size of the first layer";
     for (int i = 0; i < input_size; i++) n.layers[0](i, 0) = input_data[i]; // Set input values
-    for (int i = 0; i < n.num_layers - 1; i++) n.layers[i + 1] = std::data::T(activations[i].f(std::data::T(layers[i]) * weights[i] + biases[i])); // Compute the output of the network
+    for (int i = 0; i < n.num_layers - 1; i++) n.layers[i + 1] = activations[i].f(compute_layer(i)); // Compute the output of the network
 
     return n; // Return the computed network
 }
