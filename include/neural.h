@@ -254,7 +254,7 @@ namespace std {
                 Function *activations; // Activation functions of the network
                 int num_layers; // Size of the network
 
-                std::data::matrix<float> compute_layer(int index) { return std::data::T(std::data::T(layers[index]) * weights[index] + biases[index]); }
+                std::data::matrix<float> compute_layer(int index) { return std::data::T(std::data::T(layers[index]) * weights[index]) + biases[index]; }
 
             public:
 
@@ -290,7 +290,6 @@ namespace std {
                 template<typename... Args>
                 network backpropagate(float learning_rate, const ParametricFunction *loss_function, Args... expected_output) {
 
-                    printf("debubìg\n");
                     float expected_data[] = { expected_output... };
                     int expected_size = sizeof...(expected_output);
 
@@ -298,15 +297,16 @@ namespace std {
                     for (int i = 0; i < expected_size; i++) expected(i, 0) = expected_data[i]; // Set expected output values
 
                     network n(*this);
+                    if (expected_size != layers[num_layers - 1].size()[0]) throw "Expected output size does not match the size of the last layer";
                     std::data::matrix<float> grad = loss_function -> df(layers[num_layers - 1], expected);
                     for (int i = n.num_layers - 2; i >= 0; i--) {
 
                         printf("\nbackpropagation: layer %d\n", i);
-                        grad *= activations[i].df(compute_layer(i)); // Compute gradient
+                        grad *= std::data::T(activations[i].df(compute_layer(i))); // Compute gradient
+                        printf("debug - size of grad: %d %d\n", grad.size()[0], grad.size()[1]);
+                        n.weights[i] -= std::data::T(learning_rate * (grad * std::data::T(layers[i]))); // Update weights
                         printf("debug\n");
-                        n.weights[i - 1] -= std::data::T(learning_rate * (grad * std::data::T(layers[i - 1]))); // Update weights
-                        printf("debug\n");
-                        grad *= std::data::T(weights[i - 1]); // Update gradient
+                        grad *= std::data::T(weights[i]); // Update gradient
                     }
 
                     return n; // Return the updated network
@@ -415,9 +415,9 @@ std::neural::network std::neural::network::compute(Args... input) {
     int input_size = sizeof...(input);
     
     network n(*this);
-    if (input_size != n.layers[0].size()[0]) throw "Input size does not match the size of the first layer";
+    if (input_size != layers[0].size()[0]) throw "Input size does not match the size of the first layer";
     for (int i = 0; i < input_size; i++) n.layers[0](i, 0) = input_data[i]; // Set input values
-    for (int i = 0; i < n.num_layers - 1; i++) n.layers[i + 1] = activations[i].f(compute_layer(i)); // Compute the output of the network
+    for (int i = 1; i < n.num_layers; i++) n.layers[i] = activations[i - 1].f(compute_layer(i - 1)); // Compute the output of the network
 
     return n; // Return the computed network
 }
