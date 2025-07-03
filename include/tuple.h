@@ -1,15 +1,14 @@
 #ifndef TUPLE_H
 #define TUPLE_H
 
+#include "tensor.h"
+
 namespace std {
 
     namespace data {
 
         template<typename A>
-        class tuple {
-
-            private:
-                A* data;
+        class tuple : public std::data::tensor<A, 1> { // Tuple class that inherits from tensor with 1 dimension
 
             public:
 
@@ -24,8 +23,8 @@ namespace std {
                 tuple(Args... args) : size(sizeof...(args)) { // Constructor that takes a variable number of arguments
                     
                     A temp[] = { args... }; // Create an array of the arguments
-                    data = new A[size]; // Allocate memory for the tuple
-                    for (int i = 0; i < size; i++) data[i] = temp[i]; // Assign the arguments to the tuple
+                    this->data = new A[size]; // Allocate memory for the tuple
+                    for (int i = 0; i < size; i++) this->data[i] = temp[i]; // Assign the arguments to the tuple
                 }
 
                 /**
@@ -38,10 +37,10 @@ namespace std {
                 A& operator[](int index) const { 
                     
                     if (index < 0 || index >= size) throw "Index out of bounds"; // Check if the index is valid
-                    return data[index]; // Return the element at the specified index
+                    return this->data[index]; // Return the element at the specified index
                 } 
                 
-                ~tuple() { delete[] data; } // Destructor
+                ~tuple() { delete[] this->data; } // Destructor
         };
     }
 }

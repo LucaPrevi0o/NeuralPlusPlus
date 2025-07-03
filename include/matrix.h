@@ -2,6 +2,7 @@
 #define MATRIX_H
 
 #include "tuple.h"
+#include "tensor.h"
 #include <stdio.h>
 
 namespace std { 
@@ -14,11 +15,10 @@ namespace std {
          * @tparam A Type of the matrix elements
          */
         template<typename A>
-        class matrix {
+        class matrix: public std::data::tensor<A, 2> {
 
             private:
 
-                A* data; 
                 int rows, columns;
 
             public:
@@ -39,7 +39,7 @@ namespace std {
                  * @param rows Number of rows
                  * @param columns Number of columns
                  */
-                matrix(int rows, int columns) : rows(rows), columns(columns) { data = new A[rows * columns]; }
+                matrix(int rows, int columns) : rows(rows), columns(columns) { this->data = new A[rows * columns]; }
 
                 /**
                  * @brief Construct a new matrix object.
@@ -48,8 +48,8 @@ namespace std {
                  */
                 matrix(const matrix<A> &other) : rows(other.rows), columns(other.columns) { 
                     
-                    data = new A[rows * columns];
-                    for (int i = 0; i < rows * columns; i++) data[i] = other.data[i];
+                    this->data = new A[rows * columns];
+                    for (int i = 0; i < rows * columns; i++) this->data[i] = other.data[i];
                 }
 
                 /**
@@ -59,8 +59,8 @@ namespace std {
                  */
                 matrix(const A &element) : rows(1), columns(1) { 
 
-                    data = new A[1];
-                    data[0] = element;
+                    this->data = new A[1];
+                    this->data[0] = element;
                 }
 
                 /**
@@ -207,7 +207,7 @@ template<typename A>
 A& std::data::matrix<A>::operator()(int row, int column) {
 
     if (row < 0 || row >= rows || column < 0 || column >= columns) throw "Invalid row or column";
-    return data[row * columns + column];
+    return this->data[row * columns + column];
 }
 
 /**
@@ -222,7 +222,7 @@ std::data::matrix<A> std::data::matrix<A>::row(int row) {
 
     if (row < 0 || row >= rows) throw "Invalid row";
     std::data::matrix<A> result(1, columns);
-    for (int i = 0; i < columns; i++) result[i] = data[row * columns + i];
+    for (int i = 0; i < columns; i++) result[i] = this->data[row * columns + i];
     return result;
 }
 
@@ -238,7 +238,7 @@ std::data::matrix<A> std::data::matrix<A>::column(int column) {
 
     if (column < 0 || column >= columns) throw "Invalid column";
     std::data::matrix<A> result(rows, 1);
-    for (int i = 0; i < rows; i++) result.data[i] = data[i * columns + column];
+    for (int i = 0; i < rows; i++) result.data[i] = this->data[i * columns + column];
     return result;
 }
 
@@ -257,14 +257,14 @@ std::data::matrix<A> std::data::matrix<A>::operator|(std::data::matrix<A> other)
         std::data::matrix<A> result(rows, columns + other.columns);
         for (int i = 0; i < rows; i++) {
 
-            for (int j = 0; j < columns; j++) result(i, j) = data[i * columns + j];
+            for (int j = 0; j < columns; j++) result(i, j) = this->data[i * columns + j];
             for (int j = 0; j < other.columns; j++) result(i, j + columns) = other(i, j);
         }
         return result;
     } else if (columns == other.columns) { // Concatenate vertically
 
         std::data::matrix<A> result(rows + other.rows, columns);
-        for (int i = 0; i < rows; i++) for (int j = 0; j < columns; j++) result(i, j) = data[i * columns + j];
+        for (int i = 0; i < rows; i++) for (int j = 0; j < columns; j++) result(i, j) = this->data[i * columns + j];
         for (int i = 0; i < other.rows; i++) for (int j = 0; j < other.columns; j++) result(i + rows, j) = other(i, j);
         return result;
     } else throw "Invalid matrix sizes"; // Invalid matrix sizes
@@ -285,7 +285,7 @@ std::data::matrix<A> std::data::matrix<A>::operator+(std::data::matrix<A> other)
     if (rows != other.rows || columns != other.columns) throw "Matrices have different sizes";
     printf("res.size = (%d %d)\n", rows, columns);
     std::data::matrix<A> result(rows, columns);
-    for (int i = 0; i < rows * columns; i++) result.data[i] = data[i] + other.data[i];
+    for (int i = 0; i < rows * columns; i++) result.data[i] = this->data[i] + other.data[i];
     return result;
 }
 /**
@@ -298,7 +298,7 @@ template<typename A>
 std::data::matrix<A> std::data::matrix<A>::operator+(A scalar) {
 
     std::data::matrix<A> result(rows, columns);
-    for (int i = 0; i < rows * columns; i++) result.data[i] = data[i] + scalar;
+    for (int i = 0; i < rows * columns; i++) result.data[i] = this->data[i] + scalar;
     return result;
 }
 
@@ -313,7 +313,7 @@ template<typename A>
 std::data::matrix<A> std::data::matrix<A>::operator+=(std::data::matrix<A> other) {
 
     if (rows != other.rows || columns != other.columns) throw "Matrices have different sizes +=";
-    for (int i = 0; i < rows * columns; i++) data[i] += other.data[i];
+    for (int i = 0; i < rows * columns; i++) this->data[i] += other.data[i];
     return *this;
 }
 
@@ -326,7 +326,7 @@ std::data::matrix<A> std::data::matrix<A>::operator+=(std::data::matrix<A> other
 template <typename A>
 std::data::matrix<A> std::data::matrix<A>::operator+=(A scalar) {
 
-    for (int i = 0; i < rows * columns; i++) data[i] += scalar;
+    for (int i = 0; i < rows * columns; i++) this->data[i] += scalar;
     return *this;
 }
 
@@ -345,7 +345,7 @@ std::data::matrix<A> std::data::matrix<A>::operator-(std::data::matrix<A> other)
     if (rows != other.rows || columns != other.columns) throw "Matrices have different sizes -";
     printf("res.size = (%d %d)\n", rows, columns);
     std::data::matrix<A> result(rows, columns);
-    for (int i = 0; i < rows * columns; i++) result.data[i] = data[i] - other.data[i];
+    for (int i = 0; i < rows * columns; i++) result.data[i] = this->data[i] - other.data[i];
     return result;
 }
 
@@ -359,7 +359,7 @@ template<typename A>
 std::data::matrix<A> std::data::matrix<A>::operator-(A scalar) {
 
     std::data::matrix<A> result(rows, columns);
-    for (int i = 0; i < rows * columns; i++) result.data[i] = data[i] - scalar;
+    for (int i = 0; i < rows * columns; i++) result.data[i] = this->data[i] - scalar;
     return result;
 }
 
@@ -377,7 +377,7 @@ std::data::matrix<A> std::data::matrix<A>::operator-=(std::data::matrix<A> other
     printf("(%d %d) -> ", other.rows, other.columns);
     if (rows != other.rows || columns != other.columns) throw "Matrices have different sizes -=";
     printf("res.size = (%d %d)\n", rows, columns);
-    for (int i = 0; i < rows * columns; i++) data[i] -= other.data[i];
+    for (int i = 0; i < rows * columns; i++) this->data[i] -= other.data[i];
     return *this;
 }
 
@@ -390,7 +390,7 @@ std::data::matrix<A> std::data::matrix<A>::operator-=(std::data::matrix<A> other
 template <typename A>
 std::data::matrix<A> std::data::matrix<A>::operator-=(A scalar) {
 
-    for (int i = 0; i < rows * columns; i++) data[i] -= scalar;
+    for (int i = 0; i < rows * columns; i++) this->data[i] -= scalar;
     return *this;
 }
 
@@ -411,7 +411,7 @@ std::data::matrix<A> std::data::matrix<A>::operator*(std::data::matrix<A> other)
     std::data::matrix<A> result = MATRIX_NULL(rows, other.columns);
     for (int i = 0; i < rows; i++) 
         for (int j = 0; j < other.columns; j++) 
-            for (int k = 0; k < columns; k++) result.data[i * result.columns + j] += data[i * columns + k] * other(k, j);
+            for (int k = 0; k < columns; k++) result.data[i * result.columns + j] += this->data[i * columns + k] * other(k, j);
     return result;
 }
 
@@ -425,7 +425,7 @@ template<typename A>
 std::data::matrix<A> std::data::matrix<A>::operator*(A scalar) {
 
     std::data::matrix<A> result(rows, columns);
-    for (int i = 0; i < rows * columns; i++) result.data[i] = data[i] * scalar;
+    for (int i = 0; i < rows * columns; i++) result.data[i] = this->data[i] * scalar;
     return result;
 }
 
@@ -451,7 +451,7 @@ std::data::matrix<A> std::data::matrix<A>::operator*=(std::data::matrix<A> other
 template <typename A>
 std::data::matrix<A> std::data::matrix<A>::operator*=(A scalar) {
 
-    for (int i = 0; i < rows * columns; i++) data[i] *= scalar;
+    for (int i = 0; i < rows * columns; i++) this->data[i] *= scalar;
     return *this;
 }
 
@@ -467,7 +467,7 @@ std::data::matrix<A> std::data::matrix<A>::operator/(A scalar) {
     
     if (scalar == 0) throw "Division by zero";
     std::data::matrix<A> result(rows, columns);
-    for (int i = 0; i < rows * columns; i++) result.data[i] = data[i] / scalar;
+    for (int i = 0; i < rows * columns; i++) result.data[i] = this->data[i] / scalar;
     return result;
 }
 
@@ -482,7 +482,7 @@ template<typename A>
 std::data::matrix<A> std::data::matrix<A>::operator/=(A scalar) {
 
     if (scalar == 0) throw "Division by zero";
-    for (int i = 0; i < rows * columns; i++) data[i] /= scalar;
+    for (int i = 0; i < rows * columns; i++) this->data[i] /= scalar;
     return *this;
 }
 
@@ -496,7 +496,7 @@ template<typename A>
 bool std::data::matrix<A>::operator==(std::data::matrix<A> other) {
 
     if (rows != other.rows || columns != other.columns) return false;
-    for (int i = 0; i < rows * columns; i++) if (data[i] != other.data[i]) return false;
+    for (int i = 0; i < rows * columns; i++) if (this->data[i] != other.data[i]) return false;
     return true;
 }
 
@@ -518,11 +518,11 @@ bool std::data::matrix<A>::operator!=(std::data::matrix<A> other) { return !(*th
 template<typename A>
 std::data::matrix<A> std::data::matrix<A>::operator=(std::data::matrix<A> other) {
 
-    delete[] data;
+    delete[] this->data;
     rows = other.rows;
     columns = other.columns;
-    data = new A[rows * columns];
-    for (int i = 0; i < rows * columns; i++) data[i] = other.data[i];
+    this->data = new A[rows * columns];
+    for (int i = 0; i < rows * columns; i++) this->data[i] = other.data[i];
     return *this;
 }
 
