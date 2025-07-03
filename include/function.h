@@ -21,7 +21,7 @@ namespace std {
              * @param x Input value
              * @return Function value
              */
-            virtual float f(float x) const { return x; } // Default implementation returns the input value;
+            virtual float f(float x) const = 0;
 
             /**
              * @brief Compute the function value for a matrix input.
@@ -46,7 +46,7 @@ namespace std {
              * @param x Input value
              * @return Derivative value
              */
-            virtual float df(float x) const { return 1; } // Default implementation returns 1
+            virtual float df(float x) const = 0; // Default implementation returns 1
 
             /**
              * @brief Compute the derivative of the function for a matrix input.
@@ -65,12 +65,7 @@ namespace std {
                 return result;
             }
 
-            /**
-             * @brief Copy constructor for the Function class.
-             * 
-             * @param other The Function object to copy
-             */
-            Function operator=(const Function &other) { return *this; } // Assignment operator
+            virtual Function* clone() const = 0; // Clone method to create a copy of the function
 
             /**
              * @brief Destructor for the Function class.
@@ -98,7 +93,7 @@ namespace std {
              * @param y Second input value
              * @return Function value
              */
-            virtual float f(float x, float y) const { return (x - y) * (x - y); }
+            virtual float f(float x, float y) const = 0;
 
             /**
              * @brief Compute the function value for two matrix inputs.
@@ -125,7 +120,7 @@ namespace std {
              * @param y Second input value
              * @return Derivative value
              */
-            virtual float df(float x, float y) const { return 2 * (x - y); }
+            virtual float df(float x, float y) const = 0;
 
             /**
              * @brief Compute the derivative of the function for two matrix inputs.
@@ -145,12 +140,7 @@ namespace std {
                 return result;
             }
 
-            /**
-             * @brief Copy constructor for the ParametricFunction class.
-             * 
-             * @param other The ParametricFunction object to copy
-             */
-            ParametricFunction operator=(const ParametricFunction &other) { return *this; } // Assignment operator
+            virtual ParametricFunction* clone() const = 0; // Clone method to create a copy of the function
 
             /**
              * @brief Destructor for the ParametricFunction class.
