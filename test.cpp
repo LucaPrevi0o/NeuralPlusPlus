@@ -27,6 +27,18 @@ int main() {
             for (int j = 0; j < result.size()[1]; j++) printf("%d ", result(i, j)); // Print the result of addition
             printf("\n");
         }
+        printf("\n");
+        auto new_t = std::data::tensor<int, 3>::zero(3, 2, 3); // Create an identity tensor of size 3x3
+        for (int i = 0; i < new_t.size()[2]; i++) {
+
+            for (int j = 0; j < new_t.size()[1]; j++) {
+                
+                for (int k = 0; k < new_t.size()[0]; k++) printf("%d ", new_t(k, j, i)); // Print the identity tensor
+                printf("\n");
+            }
+            printf("\n");
+        }
+        printf("\n");
     } catch (const char* e) { printf("Error: %s\n", e); }
 
     return 0;

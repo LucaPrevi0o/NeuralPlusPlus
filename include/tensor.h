@@ -36,6 +36,7 @@ namespace std {
                 }
 
             protected:
+
                 T* data; // Pointer to the tensor data
                 int capacity[N]; // Array to hold the size of each dimension
 
@@ -337,6 +338,49 @@ namespace std {
                     for (int i = 0; i < total_size(); i++) data[i] = arr[i]; // Copy the elements from the array
                     return *this; // Return the current tensor
                 }
+
+                /**
+                 * @brief Get the number of dimensions of the tensor.
+                 * 
+                 * @return constexpr int 
+                 */
+                static constexpr int dimensions() { return N; } // Return the number of dimensions of the tensor
+
+                template<typename... Args>
+                static const tensor zero(Args... args) {
+
+                    tensor result(args...); // Create a new tensor to hold the result
+                    for (int i = 0; i < result.total_size(); i++) result.data[i] = 0; // Initialize all elements to zero
+                    return result; // Return the resulting tensor
+                }
+
+                template<typename... Args>
+                static const tensor identity(Args... args) {
+
+                    // Check if the tensor is square
+                    int dims[] = {args...};
+                    static_assert(sizeof...(args) == N, "Number of size arguments must match tensor dimensions");
+                    for (int i = 0; i < N - 1; i++)
+                        if (dims[i] != dims[i + 1]) throw "Identity tensor must be square";
+
+                    tensor result(args...); // Create a new tensor to hold the result
+                    // Inizializza tutti a zero
+                    for (int i = 0; i < result.total_size(); i++) result.data[i] = 0;
+
+                    // Imposta a 1 solo le posizioni dove tutti gli indici sono uguali
+                    int size = dims[0];
+                    // Genera tutte le tuple (i, i, ..., i)
+                    for (int i = 0; i < size; ++i) {
+                        
+                        // Calcola l'indice lineare corrispondente a (i, i, ..., i)
+                        int idx = 0;
+                        for (int d = 0; d < N; ++d) idx = idx * size + i;
+                        result.data[idx] = 1;
+                    }
+
+                    return result; // Return the resulting tensor
+                }
+
         };
 
     } // namespace data
