@@ -1,15 +1,24 @@
-file_name = main
+file_name = test
 
-# Compiler
-CC = g++
+# Compiler - Use Homebrew's g++ or clang++
+CC = clang++
+
+# Compiler flags
+CXXFLAGS = -std=c++20 -Wall -Wextra -O2
+MAKEFLAGS += --no-print-directory
+
+# Include directory
+INCLUDES = -Iinclude
 
 all:
-	$(CC) -o $(file_name) $(file_name).cpp
+	@$(CC) $(CXXFLAGS) $(INCLUDES) -o $(file_name) $(file_name).cpp
 
 run: all
-	reset
-	./$(file_name)
+	@reset
+	@./$(file_name)
 
 clean:
-	rm -f $(file_name)
+	@rm -f $(file_name)
+
+.PHONY: all run clean
 

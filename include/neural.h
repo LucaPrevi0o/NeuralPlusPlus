@@ -24,9 +24,9 @@ namespace std {
              */
             class Linear : public Function {
 
-                public:
                     float f(float x) const override { return x; }
                     float df(float x) const override { return 1; }
+                    Function* clone() const override { return new Linear(*this); }
             };
 
             /**
@@ -35,9 +35,9 @@ namespace std {
              */
             class Sigmoid : public Function {
 
-                public:
                     float f(float x) const override { return 1 / (1 + exp(-x)); }
                     float df(float x) const override { return f(x) * (1 - f(x)); }
+                    Function* clone() const override { return new Sigmoid(*this); }
             };
 
             /**
@@ -46,9 +46,9 @@ namespace std {
              */
             class SiLU : public Function {
 
-                public:
                     float f(float x) const override { return x / (1 + exp(-x)); }
                     float df(float x) const override { return f(x) + (1 - f(x)) * (1 - f(x)); }
+                    Function* clone() const override { return new SiLU(*this); }
             };
             
             /**
@@ -57,20 +57,20 @@ namespace std {
              */
             class Tanh : public Function {
 
-                public:
                     float f(float x) const override { return (exp(x) - exp(-x)) / (exp(x) + exp(-x)); }
                     float df(float x) const override { return 1 - f(x) * f(x); }
+                    Function* clone() const override { return new Tanh(*this); }
             };
 
             /**
              * @brief Softplus activation function.
              * 
-             */
+             * */
             class Softplus : public Function {
 
-                public:
                     float f(float x) const override { return log(1 + exp(x)); }
                     float df(float x) const override { return 1 / (1 + exp(-x)); }
+                    Function* clone() const override { return new Softplus(*this); }
             };
         }
 
@@ -82,6 +82,7 @@ namespace std {
 
                     float f(float x, float y) const override { return (x - y) * (x - y); }
                     float df(float x, float y) const override { return 2 * (x - y); }
+                    ParametricFunction* clone() const override { return new Mse(*this); }
             };
         }
 
@@ -90,12 +91,10 @@ namespace std {
          */
         class network {
 
-            private:
-
                 std::data::matrix<float> *weights; // Weights between the layers of the network
                 std::data::matrix<float> *layers; // Layers of the network
                 std::data::matrix<float> *biases; // Biases of the network
-                Function *activations; // Activation functions of the network
+                Function **activations; // Activation functions of the network
                 int num_layers; // Size of the network
 
                 std::data::matrix<float> compute_layer(int index) { return std::data::T(std::data::T(layers[index]) * weights[index]) + biases[index]; }
@@ -110,7 +109,7 @@ namespace std {
                 typedef struct layer {
 
                     int neurons; // Number of neurons in the layer
-                    Function activation_function; // Activation function for the layer
+                    Function* activation_function; // Activation function for the layer
                 
                     /**
                      * @brief Constructor for the layer.
@@ -118,10 +117,10 @@ namespace std {
                      * @param neurons Number of neurons in the layer
                      * @param activation_function Activation function for the layer
                      */
-                    layer(int neurons, Function* activation_function) : neurons(neurons), activation_function(*activation_function) {} // Constructor for the layer
+                    layer(int neurons, Function* activation_function) : neurons(neurons), activation_function(activation_function) {} // Constructor for the layer
                 } layer;
 
-                const int size() { return num_layers; } // Returns the number of layers in the network
+                int size() { return num_layers; } // Returns the number of layers in the network
 
                 // Constructors and destructor
                 template<typename... Args> network(Args... args);
@@ -134,26 +133,13 @@ namespace std {
                 template<typename... Args>
                 network backpropagate(float learning_rate, const ParametricFunction *loss_function, Args... expected_output) {
 
-                    float expected_data[] = { expected_output... };
+                    float expected_data[] = { static_cast<float>(expected_output)... };
                     int expected_size = sizeof...(expected_output);
 
-                    std::data::matrix<float> expected(expected_size, 1);
-                    for (int i = 0; i < expected_size; i++) expected(i, 0) = expected_data[i]; // Set expected output values
+                    if (expected_size != layers[num_layers - 1].size()[0]) throw "Expected output size does not match the output layer size";
 
-                    network n(*this);
-                    if (expected_size != layers[num_layers - 1].size()[0]) throw "Expected output size does not match the size of the last layer";
-                    std::data::matrix<float> grad = loss_function -> df(layers[num_layers - 1], expected); // Compute gradient of the loss function
-                    for (int i = n.num_layers - 2; i >= 0; i--) { // Backpropagation
-
-                        printf("\nbackpropagation: layer %d\n", i);
-                        grad *= std::data::T(activations[i].df(compute_layer(i))); // Compute gradient of the activation function
-                        printf("debug - size of grad: %d %d\n", grad.size()[0], grad.size()[1]);
-                        n.weights[i] -= std::data::T(learning_rate * (grad * std::data::T(layers[i]))); // Update weights 
-                        printf("debug\n");
-                        grad *= std::data::T(weights[i]); // Update gradient
-                    }
-
-                    return n; // Return the updated network
+                    // Compute the output of the network
+                    return this; // Return the updated network
                 }
 
                 // Index operators
@@ -176,7 +162,7 @@ std::neural::network::network(Args... args) : num_layers(sizeof...(args)) {
     weights = new std::data::matrix<float>[num_layers - 1];
     layers = new std::data::matrix<float>[num_layers];
     biases = new std::data::matrix<float>[num_layers - 1];
-    activations = new Function[num_layers - 1];
+    activations = new Function*[num_layers - 1];
 
     for (int i = 0; i < num_layers - 1; i++) {
 
@@ -193,7 +179,7 @@ std::neural::network::network(Args... args) : num_layers(sizeof...(args)) {
         for (int j = 0; j < sizes[i + 1].neurons; j++) biases[i](j, 0) = ((float)rand() / RAND_MAX) * 2 - 1;
     }
 
-    for (int i = 0; i < num_layers - 1; i++) activations[i] = sizes[i].activation_function;
+    for (int i = 0; i < num_layers - 1; i++) activations[i] = sizes[i].activation_function->clone();
 }
 
 /**
@@ -208,12 +194,12 @@ std::neural::network::network(const network &other) : num_layers(other.num_layer
     weights = new std::data::matrix<float>[num_layers - 1];
     layers = new std::data::matrix<float>[num_layers];
     biases = new std::data::matrix<float>[num_layers - 1];
-    activations = new Function[num_layers - 1];
+    activations = new Function*[num_layers - 1];
 
     for (int i = 0; i < num_layers - 1; i++) weights[i] = other.weights[i];
     for (int i = 0; i < num_layers; i++) layers[i] = other.layers[i];
     for (int i = 0; i < num_layers - 1; i++) biases[i] = other.biases[i];
-    for (int i = 0; i < num_layers - 1; i++) activations[i] = other.activations[i];
+    for (int i = 0; i < num_layers - 1; i++) activations[i] = other.activations[i]->clone();
 }
 
 /**
@@ -224,21 +210,23 @@ std::neural::network::network(const network &other) : num_layers(other.num_layer
  */
 std::neural::network std::neural::network::operator=(const network &other) {
 
+    for (int i = 0; i < num_layers - 1; i++) delete activations[i];
+    delete[] activations;
+
     delete[] weights;
     delete[] layers;
     delete[] biases;
-    delete[] activations;
 
     num_layers = other.num_layers;
     weights = new std::data::matrix<float>[num_layers - 1];
     layers = new std::data::matrix<float>[num_layers];
     biases = new std::data::matrix<float>[num_layers - 1];
-    activations = new Function[num_layers - 1];
+    activations = new Function*[num_layers - 1];
 
     for (int i = 0; i < num_layers - 1; i++) weights[i] = other.weights[i];
     for (int i = 0; i < num_layers; i++) layers[i] = other.layers[i];
     for (int i = 0; i < num_layers - 1; i++) biases[i] = other.biases[i];
-    for (int i = 0; i < num_layers - 1; i++) activations[i] = other.activations[i];
+    for (int i = 0; i < num_layers - 1; i++) activations[i] = other.activations[i]->clone();
     return *this;
 }
 
@@ -255,7 +243,7 @@ std::neural::network std::neural::network::operator=(const network &other) {
 template<typename... Args>
 std::neural::network std::neural::network::compute(Args... input) {
 
-    float input_data[] = { input... };
+    for (int i = 1; i < n.num_layers; i++) n.layers[i] = activations[i - 1]->f(compute_layer(i - 1)); // Compute the output of the network
     int input_size = sizeof...(input);
     
     network n(*this);

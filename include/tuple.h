@@ -12,35 +12,17 @@ namespace std {
 
             public:
 
-                const int size;
-
                 /**
                  * @brief Construct a new tuple object with a variable number of arguments.
                  * 
                  * @param args Arguments to initialize the tuple with
                  */
                 template<typename... Args>
-                tuple(Args... args) : size(sizeof...(args)) { // Constructor that takes a variable number of arguments
-                    
-                    A temp[] = { args... }; // Create an array of the arguments
-                    this->data = new A[size]; // Allocate memory for the tuple
-                    for (int i = 0; i < size; i++) this->data[i] = temp[i]; // Assign the arguments to the tuple
+                tuple(Args... args) : std::data::tensor<A, 1>(sizeof...(args)) { // Call parent constructor in initialization list
+            
+                    A temp[] = {args...}; // Initialize the data array with the arguments
+                    for (int i = 0; i < this->capacity[0]; i++) this->data[i] = temp[i]; // Copy the data into the tensor
                 }
-
-                /**
-                 * @brief Access the element at the specified index.
-                 * 
-                 * @param index Index of the element to access
-                 * @throw "Index out of bounds" if the index is out of bounds
-                 * @return Element at the specified index
-                 */
-                A& operator[](int index) const { 
-                    
-                    if (index < 0 || index >= size) throw "Index out of bounds"; // Check if the index is valid
-                    return this->data[index]; // Return the element at the specified index
-                } 
-                
-                ~tuple() { delete[] this->data; } // Destructor
         };
     }
 }
