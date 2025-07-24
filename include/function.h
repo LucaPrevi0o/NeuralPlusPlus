@@ -33,10 +33,9 @@ namespace std {
              */
             std::data::matrix<float> f(std::data::matrix<float> x) const {
 
-                std::data::tuple<int> s = x.size();
-                std::data::matrix<float> result(s[0], s[1]);
-                for (int i = 0; i < s[0]; i++) 
-                    for (int j = 0; j < s[1]; j++) result(i, j) = f(x(i, j));
+                std::data::matrix<float> result(x.size()[0], x.size()[1]);
+                for (int i = 0; i < x.size()[0]; i++) 
+                    for (int j = 0; j < x.size()[1]; j++) result(i, j) = f(x(i, j));
                 return result;
             }
 
@@ -58,10 +57,9 @@ namespace std {
              */
             std::data::matrix<float> df(std::data::matrix<float> x) const {
 
-                std::data::tuple<int> s = x.size();
-                std::data::matrix<float> result(s[0], s[1]);
-                for (int i = 0; i < s[0]; i++) 
-                    for (int j = 0; j < s[1]; j++) result(i, j) = df(x(i, j));
+                std::data::matrix<float> result(x.size()[0], x.size()[1]);
+                for (int i = 0; i < x.size()[0]; i++) 
+                    for (int j = 0; j < x.size()[1]; j++) result(i, j) = df(x(i, j));
                 return result;
             }
 
@@ -106,10 +104,9 @@ namespace std {
              */
             std::data::matrix<float> f(std::data::matrix<float> x, std::data::matrix<float> y) const {
 
-                std::data::tuple<int> s = x.size();
-                std::data::matrix<float> result(s[0], s[1]);
-                for (int i = 0; i < s[0]; i++) 
-                    for (int j = 0; j < s[1]; j++) result(i, j) = f(x(i, j), y(i, j));
+                std::data::matrix<float> result(x.size()[0], x.size()[1]);
+                for (int i = 0; i < x.size()[0]; i++) 
+                    for (int j = 0; j < x.size()[1]; j++) result(i, j) = f(x(i, j), y(i, j));
                 return result;
             }
 
@@ -133,10 +130,9 @@ namespace std {
              */
             std::data::matrix<float> df(std::data::matrix<float> x, std::data::matrix<float> y) const {
 
-                std::data::tuple<int> s = x.size();
-                std::data::matrix<float> result(s[0], s[1]);
-                for (int i = 0; i < s[0]; i++) 
-                    for (int j = 0; j < s[1]; j++) result(i, j) = df(x(i, j), y(i, j));
+                std::data::matrix<float> result(x.size()[0], x.size()[1]);
+                for (int i = 0; i < x.size()[0]; i++) 
+                    for (int j = 0; j < x.size()[1]; j++) result(i, j) = df(x(i, j), y(i, j));
                 return result;
             }
 
