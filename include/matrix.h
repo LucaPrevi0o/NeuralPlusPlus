@@ -44,9 +44,9 @@ namespace std {
          * @return Transpose of the matrix
          */
         template<typename A>
-        matrix<A> T(matrix<A> mat) {
+        tensor<A, 2> T(tensor<A, 2> mat) {
 
-            matrix<A> result(mat.size()[1], mat.size()[0]);
+            tensor<A, 2> result(mat.size()[1], mat.size()[0]);
             for (int i = 0; i < mat.size()[0]; i++) 
                 for (int j = 0; j < mat.size()[1]; j++) result(j, i) = mat(i, j);
             return result;
@@ -60,7 +60,7 @@ namespace std {
          * @return Trace of the matrix
          */
         template<typename A>
-        A tr(matrix<A> mat) {
+        A tr(tensor<A, 2> mat) {
 
             if (mat.size()[0] != mat.size()[1]) throw "Matrix is not square";
             A result = A(0);
@@ -79,9 +79,9 @@ namespace std {
          * @return Submatrix of the matrix
          */
         template<typename A>
-        matrix<A> submatrix(matrix<A> mat, tensor<int, 1> del_rows, tensor<int, 1> del_cols) {
+        tensor<A, 2> submatrix(tensor<A, 2> mat, tensor<int, 1> del_rows, tensor<int, 1> del_cols) {
 
-            matrix<A> result(mat.size()[0] - del_rows.size()[0], mat.size()[1] - del_cols.size()[0]);
+            tensor<A, 2> result(mat.size()[0] - del_rows.size()[0], mat.size()[1] - del_cols.size()[0]);
             int r = -1, q = 0;
             for (int i = 0; i < mat.size()[0]; i++) {
 
@@ -108,16 +108,16 @@ namespace std {
          * @return Adjugate of the matrix
          */
         template<typename A>
-        matrix<A> adj(matrix<A> mat) {
+        tensor<A, 2> adj(tensor<A, 2> mat) {
 
             if (mat.size()[0] != mat.size()[1]) throw "Matrix is not square";
-            matrix<A> result(mat.size()[0], mat.size()[1]);
+            tensor<A, 2> result(mat.size()[0], mat.size()[1]);
             for (int i = 0; i < mat.size()[0]; i++) {
                 for (int j = 0; j < mat.size()[1]; j++) {
 
                     tensor<int, 1> del_row(1); del_row(0) = i;
                     tensor<int, 1> del_col(1); del_col(0) = j;
-                    matrix<A> subm = submatrix(mat, del_row, del_col);
+                    tensor<A, 2> subm = submatrix(mat, del_row, del_col);
                     result(i, j) = det(subm) * ((i + j) % 2 == 0 ? (A)1 : (A)(-1));
                 }
             }
@@ -132,7 +132,7 @@ namespace std {
          * @return Determinant of the matrix
          */
         template<typename A>
-        A det(matrix<A> mat) { 
+        A det(tensor<A, 2> mat) {
 
             if (mat.size()[0] != mat.size()[1]) throw "Matrix is not square";
             else if (mat.size()[0] == 1) return mat(0, 0);
