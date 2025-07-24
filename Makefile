@@ -1,4 +1,4 @@
-file_name = test
+name = test
 
 # Compiler - Use Homebrew's g++ or clang++
 CC = clang++
@@ -11,14 +11,14 @@ MAKEFLAGS += --no-print-directory
 INCLUDES = -Iinclude
 
 all:
-	@$(CC) $(CXXFLAGS) $(INCLUDES) -o $(file_name) $(file_name).cpp
+	@$(CC) $(CXXFLAGS) $(INCLUDES) -o $(name) $(name).cpp
 
 run: all
 	@reset
-	@./$(file_name)
+	@./$(name)
 
 clean:
-	@rm -f $(file_name)
+	@rm -f $(name)
 
 .PHONY: all run clean
 
