@@ -1,7 +1,7 @@
 #ifndef FUNCTION_H
 #define FUNCTION_H
 
-#include "matrix.h"
+#include "tensor.h"
 
 namespace std {
 

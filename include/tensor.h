@@ -15,15 +15,15 @@ namespace std {
          * 
          * This class represents a tensor, which is a multi-dimensional array.
          * It provides methods for accessing and manipulating the tensor data.
-         * * @tparam T Type of the tensor elements
+         * * @tparam A Type of the tensor elements
          * * @tparam N Number of dimensions of the tensor
          */
-        template<typename T, int N>
+        template<typename A, int N>
         class tensor {
 
             protected:
 
-                T* data; // Pointer to the tensor data
+                A* data; // Pointer to the tensor data
                 int capacity[N]; // Array to hold the size of each dimension
 
                 tensor(int dims[N]) {
@@ -33,7 +33,7 @@ namespace std {
                         capacity[i] = dims[i];
                         if (dims[i] <= 0) throw "Invalid tensor size";
                     }
-                    data = new T[length()];
+                    data = new A[length()];
                 }
 
                 int length() const {
@@ -58,7 +58,7 @@ namespace std {
                     static_assert(sizeof...(args) == N, "Number of size arguments must match tensor dimensions");
                     int dims[] = {args...};
                     for (int i = 0; i < N; ++i) capacity[i] = dims[i];
-                    data = new T[length()]; // Allocate memory for the tensor data
+                    data = new A[length()]; // Allocate memory for the tensor data
                 }
 
                 /**
@@ -71,7 +71,7 @@ namespace std {
                 tensor(const tensor& other) {
 
                     for (int i = 0; i < N; ++i) capacity[i] = other.capacity[i];
-                    data = new T[length()];
+                    data = new A[length()];
                     for (int i = 0; i < length(); ++i) data[i] = other.data[i];
                 }
 
@@ -89,7 +89,7 @@ namespace std {
                  * @return Reference to the element at the specified index
                  */
                 template<typename... Args>
-                T& operator()(Args... args) const {
+                A& operator()(Args... args) const {
                     
                     static_assert(sizeof...(args) == N, "Number of indices must match tensor dimensions");
                     int indices[] = {args...}; // Pack arguments into array
@@ -126,7 +126,7 @@ namespace std {
                  * @param scalar The scalar to add
                  * @return A new tensor containing the result of the addition
                  */
-                tensor operator+(const T& scalar) const {
+                tensor operator+(const A& scalar) const {
 
                     tensor result(*this); // Create a new tensor to hold the result
                     for (int i = 0; i < length(); i++) result.data[i] = data[i] + scalar; // Add the scalar to each element of the tensor
@@ -140,7 +140,7 @@ namespace std {
                  * @param t The tensor to which the scalar is added
                  * @return A new tensor containing the result of the addition
                  */
-                friend tensor operator+(const T& scalar, const tensor& t) {
+                friend tensor operator+(const A& scalar, const tensor& t) {
 
                     tensor result(t); // Create a new tensor to hold the result
                     for (int i = 0; i < t.length(); i++) result.data[i] = scalar + t.data[i]; // Add the scalar to each element of the tensor
@@ -169,7 +169,7 @@ namespace std {
                  * @param scalar The scalar to add
                  * @return Reference to the current tensor after addition
                  */
-                tensor operator+=(const T& scalar) {
+                tensor operator+=(const A& scalar) {
 
                     for (int i = 0; i < length(); i++) data[i] += scalar; // Add the scalar to each element of the tensor
                     return *this; // Return the current tensor
@@ -198,7 +198,7 @@ namespace std {
                  * @param scalar The scalar to subtract
                  * @return A new tensor containing the result of the subtraction
                  */
-                tensor operator-(const T& scalar) const {
+                tensor operator-(const A& scalar) const {
 
                     tensor result(*this); // Create a new tensor to hold the result
                     for (int i = 0; i < length(); i++) result.data[i] = data[i] - scalar; // Subtract the scalar from each element of the tensor
@@ -212,7 +212,7 @@ namespace std {
                  * @param t The tensor from which the scalar is subtracted
                  * @return A new tensor containing the result of the subtraction
                  */
-                friend tensor operator-(const T& scalar, const tensor& t) {
+                friend tensor operator-(const A& scalar, const tensor& t) {
 
                     tensor result(t); // Create a new tensor to hold the result
                     for (int i = 0; i < t.length(); i++) result.data[i] = scalar - t.data[i]; // Subtract the scalar from each element of the tensor
@@ -241,7 +241,7 @@ namespace std {
                  * @param scalar The scalar to subtract
                  * @return Reference to the current tensor after subtraction
                  */
-                tensor operator-=(const T& scalar) {
+                tensor operator-=(const A& scalar) {
 
                     for (int i = 0; i < length(); i++) data[i] -= scalar; // Subtract the scalar from each element of the tensor
                     return *this; // Return the current tensor
@@ -258,7 +258,7 @@ namespace std {
                  * @throw "Tensor contraction: dimensions do not match" if the last dimension of the first tensor does not match the first dimension of the second tensor
                  * * @tparam M Number of dimensions of the second tensor
                  */ 
-                template<int M> tensor<T, N + M - 2> operator*(const tensor<T, M>& other) const {
+                template<int M> tensor<A, N + M - 2> operator*(const tensor<A, M>& other) const {
 
                     // Contrai sull'ultima dimensione di this e la prima di other
                     if (capacity[N - 1] != other.capacity[0]) throw "Tensor contraction: dimensions do not match";
@@ -268,7 +268,7 @@ namespace std {
                     for (int i = 0; i < N - 1; ++i) new_dims[idx++] = capacity[i];
                     for (int i = 1; i < M; ++i) new_dims[idx++] = other.capacity[i];
 
-                    tensor<T, N + M - 2> result(new_dims);
+                    tensor<A, N + M - 2> result(new_dims);
 
                     // Calcola il numero di elementi da contrarre
                     int contracted = capacity[N - 1];
@@ -282,7 +282,7 @@ namespace std {
                     for (int i = 0; i < left_size; ++i)
                         for (int j = 0; j < right_size; ++j) {
 
-                            T sum = 0;
+                            A sum = 0;
                             for (int k = 0; k < contracted; ++k) sum += data[i * contracted + k] * other.data[k * right_size + j];
                             result.data[i * right_size + j] = sum;
                         }
@@ -296,7 +296,7 @@ namespace std {
                  * @param scalar The scalar to multiply by
                  * @return A new tensor containing the result of the multiplication
                  */
-                tensor operator*(const T& scalar) const {
+                tensor operator*(const A& scalar) const {
 
                     tensor result(*this); // Create a new tensor to hold the result
                     for (int i = 0; i < length(); i++) result.data[i] = data[i] * scalar; // Multiply each element of the tensor by the scalar
@@ -310,14 +310,14 @@ namespace std {
                  * @param t The tensor to which the scalar is multiplied
                  * @return A new tensor containing the result of the multiplication
                  */
-                friend tensor operator*(const T& scalar, const tensor& t) {
+                friend tensor operator*(const A& scalar, const tensor& t) {
 
                     tensor result(t); // Create a new tensor to hold the result
                     for (int i = 0; i < t.length(); i++) result.data[i] = scalar * t.data[i]; // Multiply each element of the tensor by the scalar
                     return result; // Return the resulting tensor
                 }
 
-                tensor operator*=(const T& scalar) {
+                tensor operator*=(const A& scalar) {
 
                     for (int i = 0; i < length(); i++) data[i] *= scalar; // Multiply each element of the tensor by the scalar
                     return *this; // Return the current tensor
@@ -364,7 +364,7 @@ namespace std {
 
                     delete[] data; // Delete the old data
                     for (int i = 0; i < N; i++) capacity[i] = other.capacity[i]; // Copy the sizes of the dimensions
-                    data = new T[length()]; // Allocate new memory for the tensor data
+                    data = new A[length()]; // Allocate new memory for the tensor data
                     for (int i = 0; i < length(); i++) data[i] = other.data[i]; // Copy the elements of the tensor
                     return *this; // Return the current tensor
                 }
@@ -377,7 +377,7 @@ namespace std {
                  * @param arr The array to copy from
                  * @return Reference to the current tensor after assignment
                  */
-                tensor& operator=(const T* arr) {
+                tensor& operator=(const A* arr) {
 
                     for (int i = 0; i < length(); i++) data[i] = arr[i]; // Copy the elements from the array
                     return *this; // Return the current tensor
@@ -417,8 +417,140 @@ namespace std {
 
                     return result; // Return the resulting tensor
                 }
-
         };
+
+        /**
+         * @brief Alias for a 2D tensor, representing a matrix.
+         * 
+         * This alias simplifies the usage of a 2D tensor as a matrix.
+         * 
+         * @tparam A Type of the matrix elements
+         */
+        template<typename A>
+        using matrix = tensor<A, 2>;
+
+        /**
+         * @brief Alias for a 1D tensor, representing a tuple.
+         * 
+         * This alias simplifies the usage of a 1D tensor as a tuple.
+         * 
+         * @tparam A Type of the tuple elements
+         */
+        template<typename A>
+        using tuple = tensor<A, 1>;
+
+        /**
+         * @brief Calculate the transpose of a matrix.
+         * 
+         * @tparam T Type of the matrix elements
+         * @param mat Matrix to calculate the transpose of
+         * @return Transpose of the matrix
+         */
+        template<typename A>
+        matrix<A> T(matrix<A> mat) {
+
+            matrix<A> result(mat.size()[1], mat.size()[0]);
+            for (int i = 0; i < mat.size()[0]; i++) 
+                for (int j = 0; j < mat.size()[1]; j++) result(j, i) = mat(i, j);
+            return result;
+        }
+
+        /**
+         * @brief Calculate the trace of a matrix.
+         * 
+         * @tparam T Type of the matrix elements
+         * @param mat Matrix to calculate the trace of
+         * @return Trace of the matrix
+         */
+        template<typename A>
+        A tr(matrix<A> mat) {
+
+            if (mat.size()[0] != mat.size()[1]) throw "Matrix is not square";
+            A result = A(0);
+            for (int i = 0; i < mat.size()[0]; i++) result += mat(i, i);
+            return result;
+        }
+
+        /**
+         * @brief Calculate the submatrix of a matrix, excluding one row and column.
+         * 
+         * @tparam T Type of the matrix elements
+         * @param mat Matrix to calculate the submatrix of
+         * @param excludingRow Row to exclude
+         * @param excludingCol Column to exclude
+         * @throw "Invalid row or column" if the row or column index is out of bounds
+         * @return Submatrix of the matrix
+         */
+        template<typename A>
+        matrix<A> submatrix(matrix<A> mat, tuple<int> del_rows, tuple<int> del_cols) {
+
+            matrix<A> result(mat.size()[0] - del_rows.size()[0], mat.size()[1] - del_cols.size()[0]);
+            int r = -1, q = 0;
+            for (int i = 0; i < mat.size()[0]; i++) {
+
+                for (int j = 0; j < del_rows.size()[0]; j++) if (i == del_rows(j)) q = 1;
+                if (q) { q = 0; continue; }
+                r++;
+                int c = -1;
+                for (int j = 0; j < mat.size()[1]; j++) {
+
+                    for (int k = 0; k < del_cols.size()[0]; k++) if (j == del_cols(k)) q = 1;
+                    if (q) { q = 0; continue; }
+                    c++;
+                    result(r, c) = mat(i, j);
+                }
+            }
+            return result;
+        }
+
+        /**
+         * @brief Calculate the adjugate of a matrix.
+         * 
+         * @tparam T Type of the matrix elements
+         * @param mat Matrix to calculate the adjugate of
+         * @return Adjugate of the matrix
+         */
+        template<typename A>
+        matrix<A> adj(matrix<A> mat) {
+
+            if (mat.size()[0] != mat.size()[1]) throw "Matrix is not square";
+            matrix<A> result(mat.size()[0], mat.size()[1]);
+            for (int i = 0; i < mat.size()[0]; i++) {
+                for (int j = 0; j < mat.size()[1]; j++) {
+
+                    tuple<int> del_row(1); del_row(0) = i;
+                    tuple<int> del_col(1); del_col(0) = j;
+                    matrix<A> subm = submatrix(mat, del_row, del_col);
+                    result(i, j) = det(subm) * ((i + j) % 2 == 0 ? (A)1 : (A)(-1));
+                }
+            }
+            return A(result);
+        }
+
+        /**
+         * @brief Calculate the determinant of a matrix.
+         * 
+         * @tparam T Type of the matrix elements
+         * @param mat Matrix to calculate the determinant of
+         * @return Determinant of the matrix
+         */
+        template<typename A>
+        A det(matrix<A> mat) {
+
+            if (mat.size()[0] != mat.size()[1]) throw "Matrix is not square";
+            else if (mat.size()[0] == 1) return mat(0, 0);
+            else {
+
+                A res = A(0);
+                for (int p = 0; p < mat.size()[0]; p++) {
+
+                    tuple<int> del_row(1); del_row(0) = 0;
+                    tuple<int> del_col(1); del_col(0) = p;
+                    res += mat(0, p) * det(submatrix(mat, del_row, del_col)) * ((p % 2 == 0) ? A(1) : A(-1));
+                }
+                return res;
+            }
+        }
 
     } // namespace data
 }

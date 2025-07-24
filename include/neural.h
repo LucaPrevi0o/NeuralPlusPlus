@@ -3,7 +3,7 @@
 
 #include <math.h>
 #include <stdio.h>
-#include "matrix.h"
+#include "tensor.h"
 #include "function.h"
 
 namespace std {
