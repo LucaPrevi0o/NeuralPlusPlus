@@ -31,6 +31,9 @@ namespace std {
                 using std::data::tensor<A, 2>::operator==; // Import equality operator from the base class
                 using std::data::tensor<A, 2>::operator!=; // Import inequality operator from the base class
                 using std::data::tensor<A, 2>::operator=; // Import assignment operator from the base class
+
+                using std::data::tensor<A, 2>::zero; // Import zero tensor from the base class
+                using std::data::tensor<A, 2>::identity; // Import identity tensor from the base class
         };
 
         /**
