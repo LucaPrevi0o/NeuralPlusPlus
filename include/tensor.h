@@ -3,6 +3,11 @@
 
 namespace std {
 
+    /**
+     * @brief Namespace for data structures and algorithms.
+     * 
+     * This namespace contains classes and functions for handling multi-dimensional arrays (tensors).
+     */
     namespace data {
 
         /**
@@ -16,7 +21,10 @@ namespace std {
         template<typename T, int N>
         class tensor {
 
-            private:
+            protected:
+
+                T* data; // Pointer to the tensor data
+                int capacity[N]; // Array to hold the size of each dimension
 
                 tensor(int dims[N]) {
 
@@ -25,20 +33,15 @@ namespace std {
                         capacity[i] = dims[i];
                         if (dims[i] <= 0) throw "Invalid tensor size";
                     }
-                    data = new T[total_size()];
+                    data = new T[length()];
                 }
 
-                int total_size() const {
+                int length() const {
                     
                     int size = 1;
                     for (int i = 0; i < N; i++) size *= capacity[i]; // Calculate the total size of the tensor
                     return size; // Return the total size
                 }
-
-            protected:
-
-                T* data; // Pointer to the tensor data
-                int capacity[N]; // Array to hold the size of each dimension
 
             public:
 
@@ -55,7 +58,7 @@ namespace std {
                     static_assert(sizeof...(args) == N, "Number of size arguments must match tensor dimensions");
                     int dims[] = {args...};
                     for (int i = 0; i < N; ++i) capacity[i] = dims[i];
-                    data = new T[total_size()]; // Allocate memory for the tensor data
+                    data = new T[length()]; // Allocate memory for the tensor data
                 }
 
                 /**
@@ -68,8 +71,8 @@ namespace std {
                 tensor(const tensor& other) {
 
                     for (int i = 0; i < N; ++i) capacity[i] = other.capacity[i];
-                    data = new T[total_size()];
-                    for (int i = 0; i < total_size(); ++i) data[i] = other.data[i];
+                    data = new T[length()];
+                    for (int i = 0; i < length(); ++i) data[i] = other.data[i];
                 }
 
                 /**
@@ -77,7 +80,7 @@ namespace std {
                  * 
                  * @return Array of sizes for each dimension
                  */
-                const int* size() const { return capacity; }
+                const constexpr int* size() const { return capacity; }
 
                 /**
                  * @brief Access the element at the specified index using variadic arguments.
@@ -113,7 +116,7 @@ namespace std {
                         if (capacity[i] != other.capacity[i]) throw "Tensors have different sizes"; // Check if the sizes of the tensors match
 
                     tensor result(*this); // Create a new tensor to hold the result
-                    for (int i = 0; i < total_size(); i++) result.data[i] = data[i] + other.data[i]; // Add the elements of the tensors
+                    for (int i = 0; i < length(); i++) result.data[i] = data[i] + other.data[i]; // Add the elements of the tensors
                     return result; // Return the resulting tensor
                 }
 
@@ -126,7 +129,21 @@ namespace std {
                 tensor operator+(const T& scalar) const {
 
                     tensor result(*this); // Create a new tensor to hold the result
-                    for (int i = 0; i < total_size(); i++) result.data[i] = data[i] + scalar; // Add the scalar to each element of the tensor
+                    for (int i = 0; i < length(); i++) result.data[i] = data[i] + scalar; // Add the scalar to each element of the tensor
+                    return result; // Return the resulting tensor
+                }
+
+                /**
+                 * @brief Add a scalar to each element of the tensor.
+                 * 
+                 * @param scalar The scalar to add
+                 * @param t The tensor to which the scalar is added
+                 * @return A new tensor containing the result of the addition
+                 */
+                friend tensor operator+(const T& scalar, const tensor& t) {
+
+                    tensor result(t); // Create a new tensor to hold the result
+                    for (int i = 0; i < t.length(); i++) result.data[i] = scalar + t.data[i]; // Add the scalar to each element of the tensor
                     return result; // Return the resulting tensor
                 }
 
@@ -142,7 +159,7 @@ namespace std {
                     for (int i = 0; i < N; i++)
                         if (capacity[i] != other.capacity[i]) throw "Tensors have different sizes"; // Check if the sizes of the tensors match
 
-                    for (int i = 0; i < total_size(); i++) data[i] += other.data[i]; // Add the elements of the tensors
+                    for (int i = 0; i < length(); i++) data[i] += other.data[i]; // Add the elements of the tensors
                     return *this; // Return the current tensor
                 }
 
@@ -154,7 +171,7 @@ namespace std {
                  */
                 tensor operator+=(const T& scalar) {
 
-                    for (int i = 0; i < total_size(); i++) data[i] += scalar; // Add the scalar to each element of the tensor
+                    for (int i = 0; i < length(); i++) data[i] += scalar; // Add the scalar to each element of the tensor
                     return *this; // Return the current tensor
                 }
 
@@ -171,7 +188,7 @@ namespace std {
                         if (capacity[i] != other.capacity[i]) throw "Tensors have different sizes"; // Check if the sizes of the tensors match
 
                     tensor result(*this); // Create a new tensor to hold the result
-                    for (int i = 0; i < total_size(); i++) result.data[i] = data[i] - other.data[i]; // Subtract the elements of the tensors
+                    for (int i = 0; i < length(); i++) result.data[i] = data[i] - other.data[i]; // Subtract the elements of the tensors
                     return result; // Return the resulting tensor
                 }
 
@@ -184,7 +201,21 @@ namespace std {
                 tensor operator-(const T& scalar) const {
 
                     tensor result(*this); // Create a new tensor to hold the result
-                    for (int i = 0; i < total_size(); i++) result.data[i] = data[i] - scalar; // Subtract the scalar from each element of the tensor
+                    for (int i = 0; i < length(); i++) result.data[i] = data[i] - scalar; // Subtract the scalar from each element of the tensor
+                    return result; // Return the resulting tensor
+                }
+
+                /**
+                 * @brief Subtract a scalar from each element of the tensor.
+                 * 
+                 * @param scalar The scalar to subtract
+                 * @param t The tensor from which the scalar is subtracted
+                 * @return A new tensor containing the result of the subtraction
+                 */
+                friend tensor operator-(const T& scalar, const tensor& t) {
+
+                    tensor result(t); // Create a new tensor to hold the result
+                    for (int i = 0; i < t.length(); i++) result.data[i] = scalar - t.data[i]; // Subtract the scalar from each element of the tensor
                     return result; // Return the resulting tensor
                 }
 
@@ -200,7 +231,7 @@ namespace std {
                     for (int i = 0; i < N; i++)
                         if (capacity[i] != other.capacity[i]) throw "Tensors have different sizes"; // Check if the sizes of the tensors match
 
-                    for (int i = 0; i < total_size(); i++) data[i] -= other.data[i]; // Subtract the elements of the tensors
+                    for (int i = 0; i < length(); i++) data[i] -= other.data[i]; // Subtract the elements of the tensors
                     return *this; // Return the current tensor
                 }
 
@@ -212,7 +243,7 @@ namespace std {
                  */
                 tensor operator-=(const T& scalar) {
 
-                    for (int i = 0; i < total_size(); i++) data[i] -= scalar; // Subtract the scalar from each element of the tensor
+                    for (int i = 0; i < length(); i++) data[i] -= scalar; // Subtract the scalar from each element of the tensor
                     return *this; // Return the current tensor
                 }
                 
@@ -268,14 +299,27 @@ namespace std {
                 tensor operator*(const T& scalar) const {
 
                     tensor result(*this); // Create a new tensor to hold the result
-                    for (int i = 0; i < total_size(); i++) result.data[i] = data[i] * scalar; // Multiply each element of the tensor by the scalar
+                    for (int i = 0; i < length(); i++) result.data[i] = data[i] * scalar; // Multiply each element of the tensor by the scalar
                     return result; // Return the resulting tensor
                 }
 
+                /**
+                 * @brief Multiply a scalar by each element of the tensor.
+                 * 
+                 * @param scalar The scalar to multiply by
+                 * @param t The tensor to which the scalar is multiplied
+                 * @return A new tensor containing the result of the multiplication
+                 */
+                friend tensor operator*(const T& scalar, const tensor& t) {
+
+                    tensor result(t); // Create a new tensor to hold the result
+                    for (int i = 0; i < t.length(); i++) result.data[i] = scalar * t.data[i]; // Multiply each element of the tensor by the scalar
+                    return result; // Return the resulting tensor
+                }
 
                 tensor operator*=(const T& scalar) {
 
-                    for (int i = 0; i < total_size(); i++) data[i] *= scalar; // Multiply each element of the tensor by the scalar
+                    for (int i = 0; i < length(); i++) data[i] *= scalar; // Multiply each element of the tensor by the scalar
                     return *this; // Return the current tensor
                 }
 
@@ -291,7 +335,7 @@ namespace std {
 
                     for (int i = 0; i < N; i++)
                         if (capacity[i] != other.capacity[i]) return false; // Check if the sizes of the dimensions match
-                    for (int i = 0; i < total_size(); i++)
+                    for (int i = 0; i < length(); i++)
                         if (data[i] != other.data[i]) return false; // Check if the elements are equal
                     return true; // Tensors are equal
                 }
@@ -314,14 +358,14 @@ namespace std {
                  * @param other The tensor to copy from
                  * @return Reference to the current tensor after assignment
                  */
-                tensor operator=(const tensor& other) {
+                tensor& operator=(const tensor& other) {
 
                     if (this == &other) return *this; // Check for self-assignment
 
                     delete[] data; // Delete the old data
                     for (int i = 0; i < N; i++) capacity[i] = other.capacity[i]; // Copy the sizes of the dimensions
-                    data = new T[total_size()]; // Allocate new memory for the tensor data
-                    for (int i = 0; i < total_size(); i++) data[i] = other.data[i]; // Copy the elements of the tensor
+                    data = new T[length()]; // Allocate new memory for the tensor data
+                    for (int i = 0; i < length(); i++) data[i] = other.data[i]; // Copy the elements of the tensor
                     return *this; // Return the current tensor
                 }
 
@@ -335,22 +379,15 @@ namespace std {
                  */
                 tensor& operator=(const T* arr) {
 
-                    for (int i = 0; i < total_size(); i++) data[i] = arr[i]; // Copy the elements from the array
+                    for (int i = 0; i < length(); i++) data[i] = arr[i]; // Copy the elements from the array
                     return *this; // Return the current tensor
                 }
-
-                /**
-                 * @brief Get the number of dimensions of the tensor.
-                 * 
-                 * @return constexpr int 
-                 */
-                static constexpr int dimensions() { return N; } // Return the number of dimensions of the tensor
 
                 template<typename... Args>
                 static const tensor zero(Args... args) {
 
                     tensor result(args...); // Create a new tensor to hold the result
-                    for (int i = 0; i < result.total_size(); i++) result.data[i] = 0; // Initialize all elements to zero
+                    for (int i = 0; i < result.length(); i++) result.data[i] = 0; // Initialize all elements to zero
                     return result; // Return the resulting tensor
                 }
 
@@ -365,7 +402,7 @@ namespace std {
 
                     tensor result(args...); // Create a new tensor to hold the result
                     // Inizializza tutti a zero
-                    for (int i = 0; i < result.total_size(); i++) result.data[i] = 0;
+                    for (int i = 0; i < result.length(); i++) result.data[i] = 0;
 
                     // Imposta a 1 solo le posizioni dove tutti gli indici sono uguali
                     int size = dims[0];
