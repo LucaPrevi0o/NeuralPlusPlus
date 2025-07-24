@@ -91,13 +91,13 @@ namespace std {
          */
         class network {
 
-                std::data::matrix<float> *weights; // Weights between the layers of the network
-                std::data::matrix<float> *layers; // Layers of the network
-                std::data::matrix<float> *biases; // Biases of the network
+                std::matrix<float> *weights; // Weights between the layers of the network
+                std::matrix<float> *layers; // Layers of the network
+                std::matrix<float> *biases; // Biases of the network
                 Function **activations; // Activation functions of the network
                 int num_layers; // Size of the network
 
-                std::data::matrix<float> compute_layer(int index) { return std::data::T(std::data::T(layers[index]) * weights[index]) + biases[index]; }
+                std::matrix<float> compute_layer(int index) { return std::T(std::T(layers[index]) * weights[index]) + biases[index]; }
 
             public:
 
@@ -144,8 +144,8 @@ namespace std {
 
                 // Index operators
                 network operator=(const network &other);
-                std::data::matrix<float> operator[](int index) const;
-                std::data::matrix<float> operator()(int index) const;
+                std::matrix<float> operator[](int index) const;
+                std::matrix<float> operator()(int index) const;
         };
     }
 }
@@ -159,23 +159,23 @@ template<typename... Args>
 std::neural::network::network(Args... args) : num_layers(sizeof...(args)) {
 
     layer sizes[] = { args... };
-    weights = new std::data::matrix<float>[num_layers - 1];
-    layers = new std::data::matrix<float>[num_layers];
-    biases = new std::data::matrix<float>[num_layers - 1];
+    weights = new std::matrix<float>[num_layers - 1];
+    layers = new std::matrix<float>[num_layers];
+    biases = new std::matrix<float>[num_layers - 1];
     activations = new Function*[num_layers - 1];
 
     for (int i = 0; i < num_layers - 1; i++) {
 
-        weights[i] = std::data::matrix<float>(sizes[i].neurons, sizes[i + 1].neurons);
+        weights[i] = std::matrix<float>(sizes[i].neurons, sizes[i + 1].neurons);
         for (int j = 0; j < sizes[i].neurons * sizes[i + 1].neurons; j++)
             weights[i](j / sizes[i + 1].neurons, j % sizes[i + 1].neurons) = ((float)rand() / RAND_MAX) * 2 - 1;
     }
 
-    for (int i = 0; i < num_layers; i++) layers[i] = std::data::matrix<float>(sizes[i].neurons, 1);
+    for (int i = 0; i < num_layers; i++) layers[i] = std::matrix<float>(sizes[i].neurons, 1);
 
     for (int i = 0; i < num_layers - 1; i++) {
         
-        biases[i] = std::data::matrix<float>(sizes[i + 1].neurons, 1);
+        biases[i] = std::matrix<float>(sizes[i + 1].neurons, 1);
         for (int j = 0; j < sizes[i + 1].neurons; j++) biases[i](j, 0) = ((float)rand() / RAND_MAX) * 2 - 1;
     }
 
@@ -191,9 +191,9 @@ std::neural::network::network(Args... args) : num_layers(sizeof...(args)) {
  */
 std::neural::network::network(const network &other) : num_layers(other.num_layers) {
 
-    weights = new std::data::matrix<float>[num_layers - 1];
-    layers = new std::data::matrix<float>[num_layers];
-    biases = new std::data::matrix<float>[num_layers - 1];
+    weights = new std::matrix<float>[num_layers - 1];
+    layers = new std::matrix<float>[num_layers];
+    biases = new std::matrix<float>[num_layers - 1];
     activations = new Function*[num_layers - 1];
 
     for (int i = 0; i < num_layers - 1; i++) weights[i] = other.weights[i];
@@ -218,9 +218,9 @@ std::neural::network std::neural::network::operator=(const network &other) {
     delete[] biases;
 
     num_layers = other.num_layers;
-    weights = new std::data::matrix<float>[num_layers - 1];
-    layers = new std::data::matrix<float>[num_layers];
-    biases = new std::data::matrix<float>[num_layers - 1];
+    weights = new std::matrix<float>[num_layers - 1];
+    layers = new std::matrix<float>[num_layers];
+    biases = new std::matrix<float>[num_layers - 1];
     activations = new Function*[num_layers - 1];
 
     for (int i = 0; i < num_layers - 1; i++) weights[i] = other.weights[i];
@@ -272,7 +272,7 @@ std::neural::network::~network() {
  * @throws "Index out of bounds" if the index is out of range
  * @return Weights of the network at the given index
  */
-std::data::matrix<float> std::neural::network::operator[](int index) const {
+std::matrix<float> std::neural::network::operator[](int index) const {
 
     if (index < 0 || index > num_layers - 1) throw "Index out of bounds";
     return weights[index];// | biases[index];
@@ -285,7 +285,7 @@ std::data::matrix<float> std::neural::network::operator[](int index) const {
  * @throws "Index out of bounds" if the index is out of range
  * @return Layer of the network at the given index
  */
-std::data::matrix<float> std::neural::network::operator()(int index) const {
+std::matrix<float> std::neural::network::operator()(int index) const {
 
     if (index < 0 || index > num_layers) throw "Index out of bounds";
     return layers[index];

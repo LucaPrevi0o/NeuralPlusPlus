@@ -1,13 +1,14 @@
 #include "include/tensor.h"
-//#include "include/matrix.h"
 #include <stdio.h>
+
+using namespace std;
 
 int main() {
 
-    std::data::tensor<int, 2> t1(2, 3);
-    std::data::tensor<int, 2> t2(3, 2);
+    tensor<int, 2> t1(2, 3);
+    tensor<int, 2> t2(3, 2);
 
-    std::data::matrix<int> m(2, 3); // Create a matrix of size 2x3
+    matrix<int> m(2, 3); // Create a matrix of size 2x3
 
     int data1[] = {1, 2, 3, 4, 5, 6}; // Example data for tensor t1
     int data2[] = {7, 8, 9, 10, 11, 12}; // Example data for tensor t2
@@ -28,10 +29,10 @@ int main() {
             printf("\n");
         }
         printf("\n");
-        std::data::matrix<int> m1(2, 3); // Create a matrix of size 2x3
+        matrix<int> m1(2, 3); // Create a matrix of size 2x3
         m1 = result; // Assign matrix m to m1
-        printf(std::data::tr(m1) == 159 + 63 ? "Trace is correct\n" : "Trace is incorrect\n"); // Check if the trace of m1 is correct
-        printf("%d\n", std::data::det(m1)); // Check if the determinant of m1 is correct
+        printf(tr(m1) == 159 + 63 ? "Trace is correct\n" : "Trace is incorrect\n"); // Check if the trace of m1 is correct
+        printf("%d\n", det(m1)); // Check if the determinant of m1 is correct
         result = t2 * t1 + 10; // Perform matrix multiplication and addition
         for (int i = 0; i < result.size()[0]; i++) {
 
@@ -54,8 +55,8 @@ int main() {
             printf("\n");
         }
 
-        std::data::matrix<int> m2(3, 2); // Create another matrix of size 3x2
-        m2 = std::data::matrix<int>::zero(5, 8); // Initialize m2 with zeros
+        matrix<int> m2(3, 2); // Create another matrix of size 3x2
+        m2 = matrix<int>::zero(5, 8); // Initialize m2 with zeros
         printf("\nZero matrix:\n");
         for (int i = 0; i < m2.size()[0]; i++) {
 
