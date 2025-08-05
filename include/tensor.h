@@ -508,7 +508,7 @@ namespace std {
 
         if (mat.size()[0] != mat.size()[1]) throw "Matrix is not square";
         matrix<A> result(mat.size()[0], mat.size()[1]);
-        for (int i = 0; i < mat.size()[0]; i++) {
+        for (int i = 0; i < mat.size()[0]; i++)
             for (int j = 0; j < mat.size()[1]; j++) {
 
                 tuple<int> del_row(1); del_row(0) = i;
@@ -516,7 +516,6 @@ namespace std {
                 matrix<A> subm = submatrix(mat, del_row, del_col);
                 result(i, j) = det(subm) * ((i + j) % 2 == 0 ? (A)1 : (A)(-1));
             }
-        }
         return A(result);
     }
 
