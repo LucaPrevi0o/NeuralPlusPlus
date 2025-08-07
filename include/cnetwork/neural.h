@@ -114,16 +114,44 @@ namespace neural {
             loss *clone() const override { return new BCE(); }
     };
 
-    class neural {
+    class network {
         
         private:
 
-            std::matrix<float> *weights; // Weights of the neural network
-            std::matrix<float> *biases;  // Biases of the neural network
-            std::matrix<float> *layers; // Layers of the neural network
-            activation **activations; // Activation functions for each layer
+            struct test {
 
-            int num_layers; // Number of layers in the neural network
+                std::matrix<float> weights; // Weights of the neural network
+                std::matrix<float> biases;  // Biases of the neural network
+                std::matrix<float> neurons; // Layers of the neural network
+                activation *function; // Activation functions for each layer
+
+                // Constructor for the test structure
+                test() : weights(0), biases(0), neurons(0), function(nullptr) {}
+
+                test(std::matrix<float> w, std::matrix<float> b, std::matrix<float> z, activation *a)
+                    : weights(w), biases(b), neurons(z), function(a) {}
+
+                test(const test& other)
+                    : weights(other.weights), biases(other.biases), neurons(other.neurons), function(other.function ? other.function -> clone() : nullptr) {}
+
+                test operator=(const test& other) {
+
+                    if (this == &other) return *this; // Check for self-assignment
+
+                    // Clean up existing resources
+                    if (function) delete function; // Delete existing function
+                    function = other.function ? other.function -> clone() : nullptr; // Clone the new function
+
+                    weights = other.weights;
+                    biases = other.biases;
+                    neurons = other.neurons;
+
+                    return *this; // Return the current object
+                }
+            };
+
+            test *t; // Test structure for the neural network
+            int layers; // Number of layers in the neural network
 
         public:
 
@@ -138,145 +166,128 @@ namespace neural {
             };
 
             template<typename... Args>
-            neural(Args... args) {
+            network(Args... args) {
 
                 layer dims[] = {args...};
-                num_layers = sizeof...(args);
+                layers = sizeof...(args);
 
-                layers = new std::matrix<float>[num_layers];
-                weights = new std::matrix<float>[num_layers - 1];
-                biases = new std::matrix<float>[num_layers - 1];
-                activations = new activation[num_layers];
+                for (auto i = 0; i < layers; i++) {
 
-                for (auto i = 0; i < num_layers; ++i) {
+                    t[i].neurons = std::matrix<float>(dims[i].size, dims[i].batch);
+                    t[i].function = dims[i].function -> clone(); // Clone the activation function for the layer
 
-                    layers[i] = std::matrix<float>(dims[i].size, dims[i].batch);
-                    activations[i] = dims[i].function;
+                    if (i < layers - 1) {
 
-                    if (i < num_layers - 1) {
-
-                        weights[i] = std::matrix<float>(dims[i + 1].size, dims[i].size);
-                        biases[i] = std::matrix<float>(dims[i + 1].size, 1);
+                        t[i].weights = std::matrix<float>(dims[i + 1].size, dims[i].size);
+                        t[i].biases = std::matrix<float>(dims[i + 1].size, 1);
 
                         // Initialize weights and biases
-                        for (int j = 0; j < weights[i].size()[0]; j++)
-                            for (int k = 0; k < weights[i].size()[1]; k++) weights[i](j, k) = rand() / RAND_MAX;
+                        for (int j = 0; j < t[i].weights.size()[0]; j++)
+                            for (int k = 0; k < t[i].weights.size()[1]; k++) t[i].weights(j, k) = rand() / RAND_MAX;
 
-                        for (int j = 0; j < biases[i].size()[0]; j++) biases[i](j, 0) = rand() / RAND_MAX;
+                        for (int j = 0; j < t[i].biases.size()[0]; j++) t[i].biases(j, 0) = rand() / RAND_MAX;
                     }
                 }
             }
 
-            neural(const neural& other) {
+            network(const network& other) {
 
-                num_layers = other.num_layers;
-                layers = new std::matrix<float>[num_layers];
-                weights = new std::matrix<float>[num_layers - 1];
-                biases = new std::matrix<float>[num_layers - 1];
-                activations = new activation*[num_layers];
-
-                for (int i = 0; i < num_layers; ++i) {
-
-                    layers[i] = other.layers[i];
-                    activations[i] = other.activations[i] -> clone(); // Assuming activation has a clone method
-
-                    if (i < num_layers - 1) {
-
-                        weights[i] = other.weights[i];
-                        biases[i] = other.biases[i];
-                    }
-                }
+                t = new test[other.layers];
+                for (int i = 0; i < other.layers; i++) t[i] = other.t[i];
             }
 
-            neural copy() const { return neural(*this); } 
+            network copy() const { return network(*this); } 
 
-            neural forward(std::matrix<float> input) {
+            int size() const { return layers; }
+            test operator[](int index) const { return t[index]; }
 
-                if (input.size()[0] != layers[0].size()[0]) throw "Input size does not match first layer size";
-                if (input.size()[1] != layers[0].size()[1]) throw "Input batch size does not match first layer batch size";
+            network forward(std::matrix<float> input) {
+
+                if (input.size()[0] != t[0].weights.size()[0]) throw "Input size does not match first layer size";
+                if (input.size()[1] != t[0].neurons.size()[1]) throw "Input batch size does not match first layer batch size";
 
                 auto result(*this); // Create a copy of the current network
 
                 // Set input values to the first layer
                 for (auto i = 0; i < input.size()[0]; i++)
-                    for (auto j = 0; j < input.size()[1]; j++) result.layers[0](i, j) = input(i, j);
+                    for (auto j = 0; j < input.size()[1]; j++) result.t[0].neurons(i, j) = input(i, j);
 
                 // Propagate through each layer
-                for (auto i = 0; i < num_layers - 1; i++) {
+                for (auto i = 0; i < layers - 1; i++) {
 
                     // Compute weighted sum: W * input
-                    auto weighted_sum = result.weights[i] * result.layers[i];
+                    auto sum = result.t[i].weights * result.t[i].neurons;
 
                     // Add biases to each column (broadcast biases across batch)
-                    for (auto col = 0; col < weighted_sum.size()[1]; col++)
-                        for (auto row = 0; row < weighted_sum.size()[0]; row++) {
+                    for (auto col = 0; col < sum.size()[1]; col++)
+                        for (auto row = 0; row < sum.size()[0]; row++) {
 
-                            auto value = weighted_sum(row, col) + result.biases[i](row, 0);
-                            weighted_sum(row, col) = value;
+                            auto value = sum(row, col) + result.t[i].biases(row, 0);
+                            sum(row, col) = value;
                         }
 
                     // Apply activation function element-wise and store in next layer
-                    for (auto row = 0; row < weighted_sum.size()[0]; row++)
-                        for (auto col = 0; col < weighted_sum.size()[1]; col++) {
+                    for (auto row = 0; row < sum.size()[0]; row++)
+                        for (auto col = 0; col < sum.size()[1]; col++) {
 
-                            auto activated_value = result.activations[i + 1] -> f(weighted_sum(row, col));
-                            result.layers[i + 1](row, col) = activated_value;
+                            auto activated_value = result.t[i + 1].function -> f(sum(row, col));
+                            result.t[i + 1].neurons(row, col) = activated_value;
                         }
                 }
 
                 return result; // Return new network with updated layer values  
             }
 
-            neural backpropagate(loss *loss_function, float learning_rate, std::matrix<float> target) {
+            network backpropagate(loss *loss_function, float learning_rate, std::matrix<float> target) {
 
-                if (target.size()[0] != layers[num_layers - 1].size()[0]) throw "Expected output rows must match last layer size";
-                if (target.size()[1] != layers[num_layers - 1].size()[1]) throw "Expected output batch size must match layer batch size";
+                if (target.size()[0] != t[layers - 1].neurons.size()[0]) throw "Expected output rows must match last layer size";
+                if (target.size()[1] != t[layers - 1].neurons.size()[1]) throw "Expected output batch size must match layer batch size";
 
                 auto result(*this); // Create a copy of the current network to modify
-                std::matrix<float> deltas[num_layers]; // Arrays to store deltas for each layer
-                auto batch = layers[0].size()[1]; // Batch size
+                std::matrix<float> deltas[layers]; // Arrays to store deltas for each layer
+                auto batch = t[0].neurons.size()[1]; // Batch size
 
                 // Calculate error for output layer
-                auto current = layers[num_layers - 1];
-                deltas[num_layers - 1] = std::matrix<float>(current.size()[0], current.size()[1]);
+                auto current = t[layers - 1].neurons;
+                deltas[layers - 1] = std::matrix<float>(current.size()[0], current.size()[1]);
 
                 // Compute delta for output layer: loss_derivative * activation_derivative (element-wise for each sample)
                 for (auto sample = 0; sample < batch; sample++)
                     for (auto i = 0; i < current.size()[0]; i++) {
 
                         auto loss = loss_function -> df(current(i, sample), target(i, sample));
-                        auto activation = activations[num_layers - 1] -> df(current(i, sample));
-                        deltas[num_layers - 1](i, sample) = loss * activation;
+                        auto activation = t[layers - 1].function -> df(current(i, sample));
+                        deltas[layers - 1](i, sample) = loss * activation;
                     }
 
                 // Backpropagate errors through hidden layers
-                for (auto l = num_layers - 2; l >= 1; l--) {
+                for (auto l = layers - 2; l >= 1; l--) {
 
-                    deltas[l] = std::matrix<float>(layers[l].size()[0], batch);
+                    deltas[l] = std::matrix<float>(t[l].neurons.size()[0], batch);
 
                     for (auto sample = 0; sample < batch; sample++)
-                        for (auto i = 0; i < layers[l].size()[0]; i++) {
+                        for (auto i = 0; i < t[l].neurons.size()[0]; i++) {
 
                             auto error = 0.0f;
-                            for (auto j = 0; j < layers[l + 1].size()[0]; j++) error += weights[l](j, i) * deltas[l + 1](j, sample);
-                            auto activation = activations[l] -> df(layers[l](i, sample));
+                            for (auto j = 0; j < t[l + 1].neurons.size()[0]; j++) error += t[l].weights(j, i) * deltas[l + 1](j, sample);
+                            auto activation = t[l].function -> df(t[l].neurons(i, sample));
                             deltas[l](i, sample) = error * activation;
                         }
                 }
 
                 // Update weights and biases with averaged gradients over the batch
-                for (auto l = 0; l < num_layers - 1; l++) {
+                for (auto l = 0; l < layers - 1; l++) {
 
                     // Update weights: average gradient over batch
-                    for (auto i = 0; i < weights[l].size()[0]; i++) {
+                    for (auto i = 0; i < t[l].weights.size()[0]; i++) {
 
-                        for (auto j = 0; j < weights[l].size()[1]; j++) {
+                        for (auto j = 0; j < t[l].weights.size()[1]; j++) {
 
                             auto gradient = 0.0f;
-                            for (auto sample = 0; sample < batch; sample++) gradient += deltas[l + 1](i, sample) * layers[l](j, sample);
+                            for (auto sample = 0; sample < batch; sample++) gradient += deltas[l + 1](i, sample) * t[l].neurons(j, sample);
                             gradient /= batch;
 
-                            result.weights[l](i, j) = weights[l](i, j) - learning_rate * gradient;
+                            result.t[l].weights(i, j) = t[l].weights(i, j) - learning_rate * gradient;
                         }
 
                         // Update biases: average bias gradient over batch
@@ -284,7 +295,7 @@ namespace neural {
                         for (auto sample = 0; sample < batch; sample++) bias_gradient += deltas[l + 1](i, sample);
                         bias_gradient /= batch;
 
-                        result.biases[l](i, 0) = biases[l](i, 0) - learning_rate * bias_gradient;
+                        result.t[l].biases(i, 0) = t[l].biases(i, 0) - learning_rate * bias_gradient;
                     }
                 }
 
