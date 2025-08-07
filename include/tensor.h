@@ -83,6 +83,13 @@ namespace std {
             const int* size() const { return capacity; }
 
             /**
+             * @brief Return the size of a specific dimension.
+             * @param index Dimension index 
+             * @return Size of the specified dimension
+             */
+            int size(int index) const { return capacity[index]; }
+
+            /**
              * @brief Access the element at the specified index using variadic arguments.
              * 
              * @param args Variable number of indices (must match tensor dimensions N)
