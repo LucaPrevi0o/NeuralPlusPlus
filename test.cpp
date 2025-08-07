@@ -1,4 +1,5 @@
 #include "include/tensor.h"
+#include "include/neural.h"
 #include <stdio.h>
 
 using namespace std;
@@ -18,5 +19,7 @@ int main() {
         for (int j = 0; j < mat.size()[1]; j++) printf("%c%d ", (mat(i, j) < 10 ? ' ' : 0), mat(i, j));
         printf("\n");
     }
+
+    neural::neural n;
     return 0;
 }

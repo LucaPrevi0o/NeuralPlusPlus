@@ -31,7 +31,7 @@ namespace neural {
              */
             virtual float df(float x) const = 0; // Default implementation returns 1
 
-            virtual activation* clone() const = 0; // Clone method to create a copy of the function
+            virtual activation *clone() const = 0;
 
             /**
              * @brief Destructor for the Function class.
@@ -70,7 +70,7 @@ namespace neural {
              */
             virtual float df(float x, float y) const = 0;
 
-            virtual loss* clone() const = 0; // Clone method to create a copy of the function
+            virtual loss *clone() const = 0;
 
             /**
              * @brief Destructor for the ParametricFunction class.

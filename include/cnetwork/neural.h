@@ -2,7 +2,6 @@
 #define NEURAL_H
 
 #include <math.h>
-#include <stdio.h>
 #include "tensor.h"
 #include "function.h"
 
@@ -17,9 +16,11 @@ namespace neural {
      */
     class LINEAR : public activation {
 
+        public:
+
             float f(float x) const override { return x; }
             float df(float x) const override { return 1; }
-            activation* clone() const override { return new LINEAR(*this); }
+            activation *clone() const override { return new LINEAR(); }
     };
 
     /**
@@ -28,9 +29,11 @@ namespace neural {
      */
     class SIGMOID : public activation {
 
+        public:
+
             float f(float x) const override { return 1 / (1 + exp(-x)); }
             float df(float x) const override { return f(x) * (1 - f(x)); }
-            activation* clone() const override { return new SIGMOID(*this); }
+            activation *clone() const override { return new SIGMOID(); }
     };
 
     /**
@@ -39,9 +42,11 @@ namespace neural {
      */
     class SILU : public activation {
 
+        public:
+
             float f(float x) const override { return x / (1 + exp(-x)); }
             float df(float x) const override { return (1 + exp(-x) * (1 + x)) / ((1 + exp(-x)) * (1 + exp(-x))); }
-            activation* clone() const override { return new SILU(*this); }
+            activation *clone() const override { return new SILU(); }
     };
     
     /**
@@ -50,251 +55,242 @@ namespace neural {
      */
     class TANH : public activation {
 
+        public:
+
             float f(float x) const override { return (exp(x) - exp(-x)) / (exp(x) + exp(-x)); }
             float df(float x) const override { return 1 - f(x) * f(x); }
-            activation* clone() const override { return new TANH(*this); }
+            activation *clone() const override { return new TANH(); }
     };
 
     /**
      * @brief Softplus activation function.
      * 
-     * */
+     */
     class SOFTPLUS : public activation {
+
+        public:
 
             float f(float x) const override { return log(1 + exp(x)); }
             float df(float x) const override { return 1 / (1 + exp(-x)); }
-            activation* clone() const override { return new SOFTPLUS(*this); }
+            activation *clone() const override { return new SOFTPLUS(); }
     };
 
+    /**
+     * @brief Mean Squared Error loss function.
+     * 
+     */
     class MSE : public loss {
 
         public:
 
             float f(float x, float y) const override { return (x - y) * (x - y); }
             float df(float x, float y) const override { return 2 * (x - y); }
-            loss* clone() const override { return new MSE(*this); }
+            loss *clone() const override { return new MSE(); }
     };
 
+    /**
+     * @brief Mean Absolute Error loss function.
+     * 
+     */
     class MAE : public loss {
 
         public:
 
             float f(float x, float y) const override { return abs(x - y); }
             float df(float x, float y) const override { return (x == y ? 0 : ((x > y) ? 1 : -1)); }
-            loss* clone() const override { return new MAE(*this); }
+            loss *clone() const override { return new MAE(); }
     };
 
+    /**
+     * @brief Binary Cross-Entropy loss function.
+     *
+     */
     class BCE : public loss {
 
         public:
 
             float f(float x, float y) const override { return -(y * log(x) + (1 - y) * log(1 - x)); }
             float df(float x, float y) const override { return -(y / x) + (1 - y) / (1 - x); }
-            loss* clone() const override { return new BCE(*this); }
+            loss *clone() const override { return new BCE(); }
     };
 
-    /**
-     * @brief Neural network class.
-     */
-    class network {
+    class neural {
+        
+        private:
 
-            std::matrix<float> *weights; // Weights between the layers of the network
-            std::matrix<float> *layers; // Layers of the network
-            std::matrix<float> *biases; // Biases of the network
-            activation **activations; // Activation functions of the network
-            int num_layers; // Size of the network
+            std::matrix<float> *weights; // Weights of the neural network
+            std::matrix<float> *biases;  // Biases of the neural network
+            std::matrix<float> *layers; // Layers of the neural network
+            activation **activations; // Activation functions for each layer
 
-            std::matrix<float> compute_layer(int index) { return std::T(std::T(layers[index]) * weights[index]) + biases[index]; }
+            int num_layers; // Number of layers in the neural network
 
         public:
 
-            /**
-             * @brief Layer structure.
-             * 
-             * This structure represents a layer in the neural network.
-             */
-            typedef struct layer {
+            struct layer {
 
-                int neurons; // Number of neurons in the layer
-                Function* activation_function; // Activation function for the layer
-            
-                /**
-                 * @brief Constructor for the layer.
-                 * 
-                 * @param neurons Number of neurons in the layer
-                 * @param activation_function Activation function for the layer
-                 */
-                layer(int neurons, Function* activation_function) : neurons(neurons), activation_function(activation_function) {} // Constructor for the layer
-            } layer;
+                int size;
+                int batch;
+                activation *function; // Activation function for the layer
 
-            int size() { return num_layers; } // Returns the number of layers in the network
-
-            // Constructors and destructor
-            template<typename... Args> network(Args... args);
-            network(const network &other);
-            ~network();
-
-            // Compute function
-            template<typename... Args> network compute(Args... input);
+                layer(int size, int batch, activation *function) : size(size), batch(batch), function(function) {}
+                layer(int size, activation *function) : size(size), batch(1), function(function) {}
+            };
 
             template<typename... Args>
-            network backpropagate(float learning_rate, const ParametricFunction *loss_function, Args... expected_output) {
+            neural(Args... args) {
 
-                float expected_data[] = { static_cast<float>(expected_output)... };
-                int expected_size = sizeof...(expected_output);
+                layer dims[] = {args...};
+                num_layers = sizeof...(args);
 
-                if (expected_size != layers[num_layers - 1].size()[0]) throw "Expected output size does not match the output layer size";
+                layers = new std::matrix<float>[num_layers];
+                weights = new std::matrix<float>[num_layers - 1];
+                biases = new std::matrix<float>[num_layers - 1];
+                activations = new activation[num_layers];
 
-                // Compute the output of the network
-                return this; // Return the updated network
+                for (auto i = 0; i < num_layers; ++i) {
+
+                    layers[i] = std::matrix<float>(dims[i].size, dims[i].batch);
+                    activations[i] = dims[i].function;
+
+                    if (i < num_layers - 1) {
+
+                        weights[i] = std::matrix<float>(dims[i + 1].size, dims[i].size);
+                        biases[i] = std::matrix<float>(dims[i + 1].size, 1);
+
+                        // Initialize weights and biases
+                        for (int j = 0; j < weights[i].size()[0]; j++)
+                            for (int k = 0; k < weights[i].size()[1]; k++) weights[i](j, k) = rand() / RAND_MAX;
+
+                        for (int j = 0; j < biases[i].size()[0]; j++) biases[i](j, 0) = rand() / RAND_MAX;
+                    }
+                }
             }
 
-            // Index operators
-            network operator=(const network &other);
-            std::matrix<float> operator[](int index) const;
-            std::matrix<float> operator()(int index) const;
+            neural(const neural& other) {
+
+                num_layers = other.num_layers;
+                layers = new std::matrix<float>[num_layers];
+                weights = new std::matrix<float>[num_layers - 1];
+                biases = new std::matrix<float>[num_layers - 1];
+                activations = new activation*[num_layers];
+
+                for (int i = 0; i < num_layers; ++i) {
+
+                    layers[i] = other.layers[i];
+                    activations[i] = other.activations[i] -> clone(); // Assuming activation has a clone method
+
+                    if (i < num_layers - 1) {
+
+                        weights[i] = other.weights[i];
+                        biases[i] = other.biases[i];
+                    }
+                }
+            }
+
+            neural copy() const { return neural(*this); } 
+
+            neural forward(std::matrix<float> input) {
+
+                if (input.size()[0] != layers[0].size()[0]) throw "Input size does not match first layer size";
+                if (input.size()[1] != layers[0].size()[1]) throw "Input batch size does not match first layer batch size";
+
+                auto result(*this); // Create a copy of the current network
+
+                // Set input values to the first layer
+                for (auto i = 0; i < input.size()[0]; i++)
+                    for (auto j = 0; j < input.size()[1]; j++) result.layers[0](i, j) = input(i, j);
+
+                // Propagate through each layer
+                for (auto i = 0; i < num_layers - 1; i++) {
+
+                    // Compute weighted sum: W * input
+                    auto weighted_sum = result.weights[i] * result.layers[i];
+
+                    // Add biases to each column (broadcast biases across batch)
+                    for (auto col = 0; col < weighted_sum.size()[1]; col++)
+                        for (auto row = 0; row < weighted_sum.size()[0]; row++) {
+
+                            auto value = weighted_sum(row, col) + result.biases[i](row, 0);
+                            weighted_sum(row, col) = value;
+                        }
+
+                    // Apply activation function element-wise and store in next layer
+                    for (auto row = 0; row < weighted_sum.size()[0]; row++)
+                        for (auto col = 0; col < weighted_sum.size()[1]; col++) {
+
+                            auto activated_value = result.activations[i + 1] -> f(weighted_sum(row, col));
+                            result.layers[i + 1](row, col) = activated_value;
+                        }
+                }
+
+                return result; // Return new network with updated layer values  
+            }
+
+            neural backpropagate(loss *loss_function, float learning_rate, std::matrix<float> target) {
+
+                if (target.size()[0] != layers[num_layers - 1].size()[0]) throw "Expected output rows must match last layer size";
+                if (target.size()[1] != layers[num_layers - 1].size()[1]) throw "Expected output batch size must match layer batch size";
+
+                auto result(*this); // Create a copy of the current network to modify
+                std::matrix<float> deltas[num_layers]; // Arrays to store deltas for each layer
+                auto batch = layers[0].size()[1]; // Batch size
+
+                // Calculate error for output layer
+                auto current = layers[num_layers - 1];
+                deltas[num_layers - 1] = std::matrix<float>(current.size()[0], current.size()[1]);
+
+                // Compute delta for output layer: loss_derivative * activation_derivative (element-wise for each sample)
+                for (auto sample = 0; sample < batch; sample++)
+                    for (auto i = 0; i < current.size()[0]; i++) {
+
+                        auto loss = loss_function -> df(current(i, sample), target(i, sample));
+                        auto activation = activations[num_layers - 1] -> df(current(i, sample));
+                        deltas[num_layers - 1](i, sample) = loss * activation;
+                    }
+
+                // Backpropagate errors through hidden layers
+                for (auto l = num_layers - 2; l >= 1; l--) {
+
+                    deltas[l] = std::matrix<float>(layers[l].size()[0], batch);
+
+                    for (auto sample = 0; sample < batch; sample++)
+                        for (auto i = 0; i < layers[l].size()[0]; i++) {
+
+                            auto error = 0.0f;
+                            for (auto j = 0; j < layers[l + 1].size()[0]; j++) error += weights[l](j, i) * deltas[l + 1](j, sample);
+                            auto activation = activations[l] -> df(layers[l](i, sample));
+                            deltas[l](i, sample) = error * activation;
+                        }
+                }
+
+                // Update weights and biases with averaged gradients over the batch
+                for (auto l = 0; l < num_layers - 1; l++) {
+
+                    // Update weights: average gradient over batch
+                    for (auto i = 0; i < weights[l].size()[0]; i++) {
+
+                        for (auto j = 0; j < weights[l].size()[1]; j++) {
+
+                            auto gradient = 0.0f;
+                            for (auto sample = 0; sample < batch; sample++) gradient += deltas[l + 1](i, sample) * layers[l](j, sample);
+                            gradient /= batch;
+
+                            result.weights[l](i, j) = weights[l](i, j) - learning_rate * gradient;
+                        }
+
+                        // Update biases: average bias gradient over batch
+                        auto bias_gradient = 0.0f;
+                        for (auto sample = 0; sample < batch; sample++) bias_gradient += deltas[l + 1](i, sample);
+                        bias_gradient /= batch;
+
+                        result.biases[l](i, 0) = biases[l](i, 0) - learning_rate * bias_gradient;
+                    }
+                }
+
+                return result; // Return new network with updated weights and biases
+            }
     };
-}
-
-/**
- * @brief Neural network constructor.
- * 
- * @param args Sizes of the layers in the network
- */
-template<typename... Args>
-std::neural::network::network(Args... args) : num_layers(sizeof...(args)) {
-
-    layer sizes[] = { args... };
-    weights = new std::matrix<float>[num_layers - 1];
-    layers = new std::matrix<float>[num_layers];
-    biases = new std::matrix<float>[num_layers - 1];
-    activations = new Function*[num_layers - 1];
-
-    for (int i = 0; i < num_layers - 1; i++) {
-
-        weights[i] = std::matrix<float>(sizes[i].neurons, sizes[i + 1].neurons);
-        for (int j = 0; j < sizes[i].neurons * sizes[i + 1].neurons; j++)
-            weights[i](j / sizes[i + 1].neurons, j % sizes[i + 1].neurons) = ((float)rand() / RAND_MAX) * 2 - 1;
-    }
-
-    for (int i = 0; i < num_layers; i++) layers[i] = std::matrix<float>(sizes[i].neurons, 1);
-
-    for (int i = 0; i < num_layers - 1; i++) {
-        
-        biases[i] = std::matrix<float>(sizes[i + 1].neurons, 1);
-        for (int j = 0; j < sizes[i + 1].neurons; j++) biases[i](j, 0) = ((float)rand() / RAND_MAX) * 2 - 1;
-    }
-
-    for (int i = 0; i < num_layers - 1; i++) activations[i] = sizes[i].activation_function->clone();
-}
-
-/**
- * @brief Neural network copy constructor.
- * 
- * The copy constructor creates a new neural network that is a copy of the given network.
- * 
- * @param other The network to copy
- */
-std::neural::network::network(const network &other) : num_layers(other.num_layers) {
-
-    weights = new std::matrix<float>[num_layers - 1];
-    layers = new std::matrix<float>[num_layers];
-    biases = new std::matrix<float>[num_layers - 1];
-    activations = new Function*[num_layers - 1];
-
-    for (int i = 0; i < num_layers - 1; i++) weights[i] = other.weights[i];
-    for (int i = 0; i < num_layers; i++) layers[i] = other.layers[i];
-    for (int i = 0; i < num_layers - 1; i++) biases[i] = other.biases[i];
-    for (int i = 0; i < num_layers - 1; i++) activations[i] = other.activations[i]->clone();
-}
-
-/**
- * @brief Neural network assignment operator.
- * 
- * @param other The network to assign
- * @return A reference to this network
- */
-std::neural::network std::neural::network::operator=(const network &other) {
-
-    for (int i = 0; i < num_layers - 1; i++) delete activations[i];
-    delete[] activations;
-
-    delete[] weights;
-    delete[] layers;
-    delete[] biases;
-
-    num_layers = other.num_layers;
-    weights = new std::matrix<float>[num_layers - 1];
-    layers = new std::matrix<float>[num_layers];
-    biases = new std::matrix<float>[num_layers - 1];
-    activations = new Function*[num_layers - 1];
-
-    for (int i = 0; i < num_layers - 1; i++) weights[i] = other.weights[i];
-    for (int i = 0; i < num_layers; i++) layers[i] = other.layers[i];
-    for (int i = 0; i < num_layers - 1; i++) biases[i] = other.biases[i];
-    for (int i = 0; i < num_layers - 1; i++) activations[i] = other.activations[i]->clone();
-    return *this;
-}
-
-/**
- * @brief Computes the output of the neural network for the given input.
- * 
- * The compute function takes an activation function and input values, computes the output of the network,
- * and returns a new network with the computed values.
- * 
- * @param activation_function The activation function to use.
- * @param input Input values for the network.
- * @return A new network with the computed values.
- */
-template<typename... Args>
-std::neural::network std::neural::network::compute(Args... input) {
-
-    for (int i = 1; i < n.num_layers; i++) n.layers[i] = activations[i - 1]->f(compute_layer(i - 1)); // Compute the output of the network
-    int input_size = sizeof...(input);
-    
-    network n(*this);
-    if (input_size != layers[0].size()[0]) throw "Input size does not match the size of the first layer";
-    for (int i = 0; i < input_size; i++) n.layers[0](i, 0) = input_data[i]; // Set input values
-    for (int i = 1; i < n.num_layers; i++) n.layers[i] = activations[i - 1].f(compute_layer(i - 1)); // Compute the output of the network
-
-    return n; // Return the computed network
-}
-
-/**
- * @brief Neural network destructor.
- */
-std::neural::network::~network() {
-
-    delete[] weights;
-    delete[] layers;
-    delete[] biases;
-    delete[] activations;
-}
-
-/**
- * @brief Neural network index operator.
- * 
- * @param index Index of the weights to return
- * @throws "Index out of bounds" if the index is out of range
- * @return Weights of the network at the given index
- */
-std::matrix<float> std::neural::network::operator[](int index) const {
-
-    if (index < 0 || index > num_layers - 1) throw "Index out of bounds";
-    return weights[index];// | biases[index];
-}
-
-/**
- * @brief Neural network index operator.
- * 
- * @param index Index of the layer to return
- * @throws "Index out of bounds" if the index is out of range
- * @return Layer of the network at the given index
- */
-std::matrix<float> std::neural::network::operator()(int index) const {
-
-    if (index < 0 || index > num_layers) throw "Index out of bounds";
-    return layers[index];
 }
 
 #endif
