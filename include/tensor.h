@@ -14,7 +14,7 @@ namespace std {
     template<typename A, int N>
     class tensor {
 
-        protected:
+        private:
 
             A* data; // Pointer to the tensor data
             int capacity[N]; // Array to hold the size of each dimension
@@ -36,6 +36,13 @@ namespace std {
                 return size; // Return the total size
             }
 
+            void check_indices(int indices[N]) const {
+
+                for (int i = 0; i < N; i++) {
+                    if (indices[i] < 0 || indices[i] >= capacity[i]) throw "Index out of bounds";
+                }
+            }
+
         public:
 
             /**
@@ -47,8 +54,8 @@ namespace std {
              */
             template<typename... Args>
             tensor(Args... args) {
-                
-                static_assert(sizeof...(args) == N, "Number of size arguments must match tensor dimensions");
+
+                if (sizeof...(args) != N) throw "Number of size arguments must match tensor dimensions";
                 int dims[] = {args...};
                 for (int i = 0; i < N; ++i) capacity[i] = dims[i];
                 data = new A[length()]; // Allocate memory for the tensor data
@@ -73,7 +80,7 @@ namespace std {
              * 
              * @return Array of sizes for each dimension
              */
-            const constexpr int* size() const { return capacity; }
+            const int* size() const { return capacity; }
 
             /**
              * @brief Access the element at the specified index using variadic arguments.
@@ -83,8 +90,8 @@ namespace std {
              */
             template<typename... Args>
             A& operator()(Args... args) const {
-                
-                static_assert(sizeof...(args) == N, "Number of indices must match tensor dimensions");
+
+                if (sizeof...(args) != N) throw "Number of indices must match tensor dimensions";
                 int indices[] = {args...}; // Pack arguments into array
                 
                 int index = 0;
@@ -104,10 +111,8 @@ namespace std {
              * @throw "Tensors have different sizes" if the tensors have different sizes
              */
             tensor operator+(const tensor& other) const {
-                
-                for (int i = 0; i < N; i++)
-                    if (capacity[i] != other.capacity[i]) throw "Tensors have different sizes"; // Check if the sizes of the tensors match
 
+                check_dimensions(other); // Check if the sizes of the tensors match
                 tensor result(*this); // Create a new tensor to hold the result
                 for (int i = 0; i < length(); i++) result.data[i] = data[i] + other.data[i]; // Add the elements of the tensors
                 return result; // Return the resulting tensor
@@ -149,9 +154,7 @@ namespace std {
              */
             tensor operator+=(const tensor& other) {
 
-                for (int i = 0; i < N; i++)
-                    if (capacity[i] != other.capacity[i]) throw "Tensors have different sizes"; // Check if the sizes of the tensors match
-
+                check_dimensions(other); // Check if the sizes of the tensors match
                 for (int i = 0; i < length(); i++) data[i] += other.data[i]; // Add the elements of the tensors
                 return *this; // Return the current tensor
             }
@@ -177,9 +180,7 @@ namespace std {
              */
             tensor operator-(const tensor& other) const {
 
-                for (int i = 0; i < N; i++)
-                    if (capacity[i] != other.capacity[i]) throw "Tensors have different sizes"; // Check if the sizes of the tensors match
-
+                check_dimensions(other); // Check if the sizes of the tensors match
                 tensor result(*this); // Create a new tensor to hold the result
                 for (int i = 0; i < length(); i++) result.data[i] = data[i] - other.data[i]; // Subtract the elements of the tensors
                 return result; // Return the resulting tensor
@@ -221,9 +222,7 @@ namespace std {
              */
             tensor operator-=(const tensor& other) {
 
-                for (int i = 0; i < N; i++)
-                    if (capacity[i] != other.capacity[i]) throw "Tensors have different sizes"; // Check if the sizes of the tensors match
-
+                check_dimensions(other); // Check if the sizes of the tensors match
                 for (int i = 0; i < length(); i++) data[i] -= other.data[i]; // Subtract the elements of the tensors
                 return *this; // Return the current tensor
             }
@@ -389,7 +388,7 @@ namespace std {
 
                 // Check if the tensor is square
                 int dims[] = {args...};
-                static_assert(sizeof...(args) == N, "Number of size arguments must match tensor dimensions");
+                if (sizeof...(args) != N) throw "Number of size arguments must match tensor dimensions";
                 for (int i = 0; i < N - 1; i++)
                     if (dims[i] != dims[i + 1]) throw "Identity tensor must be square";
 
