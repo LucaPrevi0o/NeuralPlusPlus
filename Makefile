@@ -10,15 +10,16 @@ MAKEFLAGS += --no-print-directory
 # Include directory
 INCLUDES = -Iinclude
 
-all:
+compile:
 	@$(CC) $(CXXFLAGS) $(INCLUDES) -o $(name) $(name).cpp
 
-run: all
-	@reset
+run: compile
 	@./$(name)
+
+all: compile run
 
 clean:
 	@rm -f $(name)
 
-.PHONY: all run clean
+.PHONY: all compile run clean
 
