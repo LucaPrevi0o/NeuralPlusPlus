@@ -2,50 +2,48 @@
 #include "include/cnetwork/neural.h"
 #include <stdio.h>
 
-using namespace std;
 using namespace neural;
 
 int main() {
 
-    // Create a 2D tensor (matrix) with dimensions 3x3
-    matrix<int> mat(9, 9);
+    try {
 
-    // Fill the matrix with some values
-    for (int i = 0; i < mat.size()[0]; i++)
-        for (int j = 0; j < mat.size()[1]; j++) mat(i, j) = i  + j; // Fill with sequential values
+        // Create a neural network with 3 layers and a batch size of 3
+        network net(
+            network::shape(3, new SIGMOID()), // First layer with 3 neurons and sigmoid activation
+            network::shape(4, new SIGMOID()), // Second layer with 4 neurons and sigmoid activation
+            network::shape(2, new SIGMOID())  // Output layer with 2 neurons and sigmoid activation
+        );
 
-    // Print the matrix
-    for (int i = 0; i < mat.size()[0]; i++) {
+        // Create an input matrix with 3 features and 1 sample
+        std::matrix<float> input(3, 1);
+        input(0, 0) = 0.5f; // Feature 1 sample 1
+        input(1, 0) = 0.2f; // Feature 2 sample 1
+        input(2, 0) = 0.8f; // Feature 3 sample 1
 
-        for (int j = 0; j < mat.size()[1]; j++) printf("%c%d ", (mat(i, j) < 10 ? ' ' : 0), mat(i, j));
-        printf("\n");
-    }
+        // Create a target matrix for training
+        std::matrix<float> target(2, 1);
+        target(0, 0) = 0.7f; // Target output for sample 1
+        target(1, 0) = 0.3f; // Target output for sample 1
 
-    network n = network(
-        network::layer(3, 1, new SIGMOID()), // Input layer with 3 neurons
-        network::layer(5, 1, new SIGMOID()), // Hidden layer with 5 neurons
-        network::layer(2, 1, new SIGMOID())  // Output layer with 2 neurons
-    );
+        for (int i = 0; i < 200; i++) {
 
-    // Forward pass through the network with a sample input
-    matrix<float> input(3, 1);
-    for (int i = 0; i < input.size()[0]; i++) input(i, 0) = i + 1; // Sample input
+            auto output = net.forward(input);
 
-    auto output = n.forward(input);
+            printf("Epoch %d: [ ", i + 1);
+            for (auto sample = 0; sample < output[output.depth() - 1].neurons.size(1); sample++)
+                for (auto neuron = 0; neuron < output[output.depth() - 1].neurons.size(0); neuron++)
+                    printf("%f ", output[output.depth() - 1].neurons(neuron, sample));
+            printf("]\n");
 
-    // Print the output of the network
-    for (int i = 0; i < output.size(); i++) {
-        
-        auto layer = n[i];
-        printf("Layer %d:\n", i);
-        for (int j = 0; j < layer.neurons.size()[0]; j++) {
-            for (int k = 0; k < layer.neurons.size()[1]; k++) {
-                printf("%c%.2f ", (layer.neurons(j, k) < 10 ? ' ' : 0), layer.neurons(j, k));
-            }
-            printf("\n");
+            net = output.backpropagate(new MSE(), 0.1f, target);
         }
-        printf("\n");
-    }
 
-    return 0;
+        return 0;
+
+    } catch (const char* e) {
+        
+        printf("Error: %s\n", e);
+        return 1;
+    }
 }
