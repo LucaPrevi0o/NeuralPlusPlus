@@ -36,11 +36,10 @@ namespace std {
                 return size; // Return the total size
             }
 
-            void check_indices(int indices[N]) const {
+            void check_indices(const tensor& other) const {
 
-                for (int i = 0; i < N; i++) {
-                    if (indices[i] < 0 || indices[i] >= capacity[i]) throw "Index out of bounds";
-                }
+                for (int i = 0; i < N; i++)
+                    if (other.capacity[i] != capacity[i]) throw "Index does not match tensor dimensions";
             }
 
         public:
@@ -119,7 +118,7 @@ namespace std {
              */
             tensor operator+(const tensor& other) const {
 
-                check_dimensions(other); // Check if the sizes of the tensors match
+                check_indices(other); // Check if the sizes of the tensors match
                 tensor result(*this); // Create a new tensor to hold the result
                 for (int i = 0; i < length(); i++) result.data[i] = data[i] + other.data[i]; // Add the elements of the tensors
                 return result; // Return the resulting tensor
@@ -161,7 +160,7 @@ namespace std {
              */
             tensor operator+=(const tensor& other) {
 
-                check_dimensions(other); // Check if the sizes of the tensors match
+                check_indices(other); // Check if the sizes of the tensors match
                 for (int i = 0; i < length(); i++) data[i] += other.data[i]; // Add the elements of the tensors
                 return *this; // Return the current tensor
             }
@@ -187,7 +186,7 @@ namespace std {
              */
             tensor operator-(const tensor& other) const {
 
-                check_dimensions(other); // Check if the sizes of the tensors match
+                check_indices(other); // Check if the sizes of the tensors match
                 tensor result(*this); // Create a new tensor to hold the result
                 for (int i = 0; i < length(); i++) result.data[i] = data[i] - other.data[i]; // Subtract the elements of the tensors
                 return result; // Return the resulting tensor
@@ -229,7 +228,7 @@ namespace std {
              */
             tensor operator-=(const tensor& other) {
 
-                check_dimensions(other); // Check if the sizes of the tensors match
+                check_indices(other); // Check if the sizes of the tensors match
                 for (int i = 0; i < length(); i++) data[i] -= other.data[i]; // Subtract the elements of the tensors
                 return *this; // Return the current tensor
             }
