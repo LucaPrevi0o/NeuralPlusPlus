@@ -1,4 +1,4 @@
-name = test
+target = main
 
 # Compiler - Use Homebrew's g++ or clang++
 CC = clang++
@@ -11,15 +11,23 @@ MAKEFLAGS += --no-print-directory
 INCLUDES = -Iinclude
 
 compile:
-	@$(CC) $(CXXFLAGS) $(INCLUDES) -o $(name) $(name).cpp
+	@$(CC) $(CXXFLAGS) $(INCLUDES) -o $(target) $(target).cpp
 
 run: compile
-	@./$(name)
+	@./$(target)
 
 all: compile run
 
 clean:
-	@rm -f $(name)
+	@rm -f $(target)
 
-.PHONY: all compile run clean
+help:
+	@echo make [option] [target]
+	@echo "Available options:"
+	@echo "- compile    Compile the project (default name: main)"
+	@echo "- run        Compile and run the project (default name: main)"
+	@echo "- all        Compile and run the project (default name: main)"
+	@echo "- clean      Remove the binary file (default name: main)"
+	@echo "- help       Show this help message"
 
+.PHONY: all compile run clean help
