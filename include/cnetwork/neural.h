@@ -115,6 +115,11 @@ namespace neural {
             loss *clone() const override { return new BCE(); }
     };
 
+    /**
+     * @brief Class representing a feedforward neural network.
+     * 
+     * This class provides methods for creating, training, and using a feedforward neural network.
+     */
     class network {
         
         private:
@@ -126,15 +131,36 @@ namespace neural {
                 std::matrix<float> neurons; // Layers of the neural network
                 activation *function; // Activation functions for each layer
 
-                // Constructor for the test structure
+                /**
+                 * @brief Construct a new layer object.
+                 */
                 layer() : weights(0, 0), biases(0, 0), neurons(0, 0), function(0) {}
 
+                /**
+                 * @brief Construct a new layer object.
+                 * 
+                 * @param w Weights of the layer
+                 * @param b Biases of the layer
+                 * @param z Neurons of the layer
+                 * @param a Activation function for the layer
+                 */
                 layer(std::matrix<float> w, std::matrix<float> b, std::matrix<float> z, activation *a)
                     : weights(w), biases(b), neurons(z), function(a) {}
 
+                /**
+                 * @brief Copy constructor for the layer.
+                 * 
+                 * @param other The layer to copy from
+                 */
                 layer(const layer& other)
                     : weights(other.weights), biases(other.biases), neurons(other.neurons), function(other.function -> clone()) {}
 
+                /**
+                 * @brief Assignment operator for the layer.
+                 * 
+                 * @param other The layer to copy from
+                 * @return layer A reference to the current layer
+                 */
                 layer operator=(const layer& other) {
 
                     if (this == &other) return *this; // Check for self-assignment
@@ -148,20 +174,43 @@ namespace neural {
                 }
             };
 
-            layer *layers; // Test structure for the neural network
+            layer *layers; // Layers of the neural network
             int size; // Number of layers in the neural network
 
         public:
 
+            /**
+             * @brief Structure representing the shape of a layer in the neural network.
+             * 
+             */
             struct shape {
 
-                int size, batch;
+                int size, batch;      // Size of the layer and batch size
                 activation *function; // Activation function for the layer
 
+                /**
+                 * @brief Construct a new shape object.
+                 * 
+                 * @param size Size of the layer
+                 * @param batch Batch size
+                 * @param function Activation function for the layer
+                 */
                 shape(int size, int batch, activation *function) : size(size), batch(batch), function(function) {}
+
+                /**
+                 * @brief Construct a new shape object.
+                 * 
+                 * @param size Size of the layer
+                 * @param function Activation function for the layer
+                 */
                 shape(int size, activation *function) : size(size), batch(1), function(function) {}
             };
 
+            /**
+             * @brief Constructor for the neural network.
+             * 
+             * @param args Shape of each layer (size, batch size and activation function)
+             */
             template<typename... Args>
             network(Args... args) : size(sizeof...(args)) {
 
@@ -187,12 +236,23 @@ namespace neural {
                 }
             }
 
+            /**
+             * @brief Copy constructor for the neural network.
+             * 
+             * @param other The neural network to copy from
+             */
             network(const network& other) : size(other.size) {
 
                 layers = new layer[size]; // Allocate memory for the layers
                 for (int i = 0; i < other.size; i++) layers[i] = other.layers[i];
             }
 
+            /**
+             * @brief Assignment operator for the neural network.
+             * 
+             * @param other The neural network to assign from
+             * @return Reference to the current object
+             */
             network& operator=(const network& other) {
 
                 if (this == &other) return *this; // Check for self-assignment
@@ -206,9 +266,27 @@ namespace neural {
                 return *this; // Return the current object
             }
 
+            /**
+             * @brief Get the depth of the neural network.
+             * 
+             * @return The number of layers in the network
+             */
             int depth() const { return size; }
+
+            /**
+             * @brief Get a specific layer of the neural network.
+             * 
+             * @param index The index of the layer to retrieve
+             * @return layer The requested layer
+             */
             layer operator[](int index) const { return layers[index]; }
 
+            /**
+             * @brief Forward pass through the network.
+             * 
+             * @param input The input matrix for the first layer
+             * @return network The output of the network after the forward pass
+             */
             network forward(std::matrix<float> input) {
 
                 if (input.size(0) != layers[0].neurons.size(0)) throw "Input size does not match first layer size";
@@ -246,6 +324,14 @@ namespace neural {
                 return result; // Return new network with updated layer values  
             }
 
+            /**
+             * @brief Backpropagation algorithm for training the network.
+             * 
+             * @param loss_function The loss function to use for training
+             * @param learning_rate The learning rate for weight updates
+             * @param target The target output for the network
+             * @return network The updated network after backpropagation
+             */
             network backpropagate(loss *loss_function, float learning_rate, std::matrix<float> target) {
 
                 auto layer = layers[size - 1]; // Last layer of the network
