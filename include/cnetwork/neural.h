@@ -404,6 +404,27 @@ namespace neural {
                 return result; // Return new network with updated weights and biases
             }
     };
-}
+
+    network train(network n, std::matrix<float> input, std::matrix<float> target, loss* loss, int epochs, float max_error, float learning_rate) {
+
+        for (int i = 0; i < epochs; i++) {
+
+            n = n.forward(input);
+
+            // Check for early stopping
+            auto error = n[n.depth() - 1].neurons - target;
+            auto early_stop = true;
+            for (auto i = 0; i < error.size(0); i++) if (abs(error(i, 0)) >= max_error) {
+
+                n = n.backpropagate(loss, learning_rate, target);
+                early_stop = false;
+                break;
+            }
+
+            if (early_stop) break;
+        }
+        return n;
+    }
+};
 
 #endif

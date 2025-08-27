@@ -40,7 +40,7 @@ int main() {
         }
         printf("]\n");
 
-        for (int i = 0; i < num_epochs; i++) {
+        /*for (int i = 0; i < num_epochs; i++) {
 
             auto output = net.forward(input);
 
@@ -68,7 +68,15 @@ int main() {
                 printf("]\n");
                 break;
             }
-        }
+        }*/
+
+        auto output = train(net, input, target, new MAE(), num_epochs, max_error, 0.05f);
+
+        printf("Output: [ ");
+        for (auto sample = 0; sample < output[output.depth() - 1].neurons.size(1); sample++)
+            for (auto neuron = 0; neuron < output[output.depth() - 1].neurons.size(0); neuron++)
+                printf("%.3f ", output[output.depth() - 1].neurons(neuron, sample));
+        printf("]\n");
 
         return 0;
 
