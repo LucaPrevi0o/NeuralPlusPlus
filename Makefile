@@ -13,7 +13,7 @@ INCLUDES = -Iinclude
 compile:
 	@$(CC) $(CXXFLAGS) $(INCLUDES) -o $(target) $(target).cpp
 
-run: compile
+run:
 	@./$(target)
 
 all: compile run
@@ -25,7 +25,7 @@ help:
 	@echo make [option] [target]
 	@echo "Available options:"
 	@echo "- compile    Compile the project (default name: main)"
-	@echo "- run        Compile and run the project (default name: main)"
+	@echo "- run        Run the project (default name: main)"
 	@echo "- all        Compile and run the project (default name: main)"
 	@echo "- clean      Remove the binary file (default name: main)"
 	@echo "- help       Show this help message"
