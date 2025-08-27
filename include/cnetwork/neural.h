@@ -124,6 +124,10 @@ namespace neural {
         
         private:
 
+            /**
+             * @brief Structure representing a layer in the neural network.
+             * 
+             */
             struct layer {
 
                 std::matrix<float> weights; // Weights of the neural network
