@@ -2,7 +2,6 @@
 #define NEURAL_H
 
 #include <math.h>
-#include <stdio.h>
 #include "tensor.h"
 #include "function.h"
 
@@ -130,9 +129,9 @@ namespace neural {
              */
             struct layer {
 
-                std::matrix<float> weights; // Weights of the neural network
-                std::matrix<float> biases;  // Biases of the neural network
-                std::matrix<float> neurons; // Layers of the neural network
+                tensor::matrix<float> weights; // Weights of the neural network
+                tensor::matrix<float> biases;  // Biases of the neural network
+                tensor::matrix<float> neurons; // Layers of the neural network
                 activation *function; // Activation functions for each layer
 
                 /**
@@ -148,7 +147,7 @@ namespace neural {
                  * @param z Neurons of the layer
                  * @param a Activation function for the layer
                  */
-                layer(std::matrix<float> w, std::matrix<float> b, std::matrix<float> z, activation *a)
+                layer(tensor::matrix<float> w, tensor::matrix<float> b, tensor::matrix<float> z, activation *a)
                     : weights(w), biases(b), neurons(z), function(a) {}
 
                 /**
@@ -223,13 +222,13 @@ namespace neural {
 
                 for (auto i = 0; i < size; i++) {
 
-                    layers[i].neurons = std::matrix<float>(dims[i].size, dims[i].batch);
+                    layers[i].neurons = tensor::matrix<float>(dims[i].size, dims[i].batch);
                     layers[i].function = dims[i].function -> clone(); // Clone the activation function for the layer
 
                     if (i < size - 1) {
 
-                        layers[i].weights = std::matrix<float>(dims[i + 1].size, dims[i].size);
-                        layers[i].biases = std::matrix<float>(dims[i + 1].size, 1);
+                        layers[i].weights = tensor::matrix<float>(dims[i + 1].size, dims[i].size);
+                        layers[i].biases = tensor::matrix<float>(dims[i + 1].size, 1);
 
                         // Initialize weights and biases
                         for (int j = 0; j < layers[i].weights.size(0); j++)
@@ -281,7 +280,7 @@ namespace neural {
              * @brief Get a specific layer of the neural network.
              * 
              * @param index The index of the layer to retrieve
-             * @return layer The requested layer
+             * @return The requested layer
              */
             layer operator[](int index) const { return layers[index]; }
 
@@ -289,9 +288,9 @@ namespace neural {
              * @brief Forward pass through the network.
              * 
              * @param input The input matrix for the first layer
-             * @return network The output of the network after the forward pass
+             * @return The output of the network after the forward pass
              */
-            network forward(std::matrix<float> input) {
+            network forward(tensor::matrix<float> input) {
 
                 if (input.size(0) != layers[0].neurons.size(0)) throw "Input size does not match first layer size";
                 if (input.size(1) != layers[0].neurons.size(1)) throw "Input batch size does not match first layer batch size";
@@ -334,9 +333,9 @@ namespace neural {
              * @param loss_function The loss function to use for training
              * @param learning_rate The learning rate for weight updates
              * @param target The target output for the network
-             * @return network The updated network after backpropagation
+             * @return The updated network after backpropagation
              */
-            network backpropagate(loss *loss_function, float learning_rate, std::matrix<float> target) {
+            network backpropagate(loss *loss_function, float learning_rate, tensor::matrix<float> target) {
 
                 auto layer = layers[size - 1]; // Last layer of the network
 
@@ -344,11 +343,11 @@ namespace neural {
                 if (target.size(1) != layer.neurons.size(1)) throw "Expected output batch size must match layer batch size";
 
                 auto result(*this); // Create a copy of the current network to modify
-                std::matrix<float> **deltas = new std::matrix<float>*[size]; // Arrays to store deltas for each layer
+                tensor::matrix<float> **deltas = new tensor::matrix<float>*[size]; // Arrays to store deltas for each layer
                 auto batch = layers[0].neurons.size(1); // Batch size
 
                 // Calculate error for output layer
-                deltas[size - 1] = new std::matrix<float>(layer.neurons.size(0), layer.neurons.size(1));
+                deltas[size - 1] = new tensor::matrix<float>(layer.neurons.size(0), layer.neurons.size(1));
 
                 // Compute delta for output layer: loss_derivative * activation_derivative (element-wise for each sample)
                 for (auto sample = 0; sample < batch; sample++)
@@ -364,7 +363,7 @@ namespace neural {
                 for (auto l = size - 2; l >= 1; l--) {
 
                     auto layer = layers[l];
-                    deltas[l] = new std::matrix<float>(layer.neurons.size(0), batch);
+                    deltas[l] = new tensor::matrix<float>(layer.neurons.size(0), batch);
 
                     for (auto sample = 0; sample < batch; sample++)
                         for (auto i = 0; i < layer.neurons.size(0); i++) {
@@ -405,7 +404,19 @@ namespace neural {
             }
     };
 
-    network train(network n, std::matrix<float> input, std::matrix<float> target, loss* loss, int epochs, float max_error, float learning_rate) {
+    /**
+     * @brief Train the neural network using the provided data and parameters.
+     * 
+     * @param n The neural network to train
+     * @param input The input data for training
+     * @param target The target output data for training
+     * @param loss The loss function to use for training
+     * @param epochs The number of epochs to train for
+     * @param max_error The maximum allowable error for early stopping
+     * @param learning_rate The learning rate for weight updates
+     * @return The trained neural network
+     */
+    network train(network n, tensor::matrix<float> input, tensor::matrix<float> target, loss* loss, int epochs, float max_error, float learning_rate) {
 
         for (int i = 0; i < epochs; i++) {
 
@@ -422,6 +433,27 @@ namespace neural {
             }
 
             if (early_stop) break;
+        }
+        return n;
+    }
+
+    /**
+     * @brief Train the neural network using the provided data and parameters.
+     * 
+     * @param n The neural network to train
+     * @param input The input data for training
+     * @param target The target output data for training
+     * @param loss The loss function to use for training
+     * @param epochs The number of epochs to train for
+     * @param learning_rate The learning rate for weight updates
+     * @return The trained neural network
+     */
+    network train(network n, tensor::matrix<float> input, tensor::matrix<float> target, loss* loss, int epochs, float learning_rate) {
+
+        for (int i = 0; i < epochs; i++) {
+
+            n = n.forward(input); // Forward pass
+            n = n.backpropagate(loss, learning_rate, target); // Backpropagation
         }
         return n;
     }
