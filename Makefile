@@ -1,7 +1,7 @@
 target = main
 
 # Compiler - Use Homebrew's g++ or clang++
-CC = clang++
+CC = g++
 
 # Compiler flags
 CXXFLAGS = -std=c++20 -Wall -Wextra -O2
