@@ -1,7 +1,7 @@
 #ifndef TENSOR_H
 #define TENSOR_H
 
-namespace std {
+namespace tensor {
 
     /**
      * @brief Tensor class for multi-dimensional arrays.
