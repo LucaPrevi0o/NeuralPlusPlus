@@ -36,12 +36,13 @@ int main() {
         matrix<float> target(net[net.depth() - 1].neurons.size(0), 1);
         printf("Target: [ ");
         for (auto i = 0; i < target.size(0); i++) {
+
             target(i, 0) = static_cast<float>(rand()) / RAND_MAX; // Random target between 0 and 1
             printf("%.2f ", target(i, 0));
         }
         printf("]\n");
 
-        auto output = train(net, input, target, new MAE(), num_epochs, max_error, 0.05f);
+        auto output = train(net, input, target, new MSE(), num_epochs, max_error, 0.05f);
 
         printf("Output: [ ");
         for (auto sample = 0; sample < output[output.depth() - 1].neurons.size(1); sample++)
