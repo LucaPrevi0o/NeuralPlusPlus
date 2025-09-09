@@ -405,26 +405,58 @@ namespace neural {
             }
     };
 
+    /**
+     * @brief Train the neural network using the specified loss function and training parameters.
+     * 
+     * @param n The neural network to train
+     * @param input The input matrix for training
+     * @param target The target output matrix for training
+     * @param loss The loss function to use for training
+     * @param epochs The maximum number of training epochs
+     * @param max_error The maximum acceptable error for early stopping
+     * @param learning_rate The learning rate for weight updates
+     * @return network The trained neural network
+     */
     network train(network n, tensor::matrix<float> input, tensor::matrix<float> target, loss* loss, int epochs, float max_error, float learning_rate) {
 
         for (int i = 0; i < epochs; i++) {
 
-            n = n.forward(input);
+            n = n.forward(input); // Forward pass through the network
 
-            // Check for early stopping
-            auto error = n[n.depth() - 1].neurons - target;
-            auto early_stop = true;
+            auto error = n[n.depth() - 1].neurons - target; // Calculate error at output layer
+            auto early_stop = true; // Flag for early stopping if error is within acceptable range
             for (auto i = 0; i < error.size(0); i++) if (abs(error(i, 0)) >= max_error) {
 
-                n = n.backpropagate(loss, learning_rate, target);
+                n = n.backpropagate(loss, learning_rate, target); // Backpropagate error and update weights
                 early_stop = false;
                 break;
             }
 
-            if (early_stop) break;
+            if (early_stop) break; // Stop training if error is within acceptable range
         }
-        return n;
+        return n; // Return the trained network
     }
-};
+
+    /**
+     * @brief Train the neural network using the specified loss function and training parameters.
+     * 
+     * @param n The neural network to train
+     * @param input The input matrix for training
+     * @param target The target output matrix for training
+     * @param loss The loss function to use for training
+     * @param epochs The maximum number of training epochs
+     * @param learning_rate The learning rate for weight updates
+     * @return network The trained neural network
+     */
+    network train(network n, tensor::matrix<float> input, tensor::matrix<float> target, loss* loss, int epochs, float learning_rate) {
+
+        for (int i = 0; i < epochs; i++) {
+
+            n = n.forward(input); // Forward pass through the network
+            n = n.backpropagate(loss, learning_rate, target); // Backpropagate error and update weights
+        }
+        return n; // Return the trained network
+    }
+};  
 
 #endif
