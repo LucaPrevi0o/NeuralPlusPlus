@@ -542,7 +542,7 @@ namespace neural {
         for (int batch = 0; batch < n_batches; batch++) {
 
             int start = batch * batch_size;
-            int end = std::min(start + batch_size, total_samples);
+            int end = start + batch_size < total_samples ? start + batch_size : total_samples;
 
             tensor::matrix<float> batch_input(input.size(0), batch_size);
             tensor::matrix<float> batch_target(num_targets, batch_size);
