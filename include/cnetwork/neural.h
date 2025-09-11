@@ -214,6 +214,8 @@ namespace neural {
                  * @param function Activation function for the layer
                  */
                 shape(int size, activation *function) : size(size), function(function) {}
+
+                //~shape() { if (function) delete function; }
             };
 
             /**

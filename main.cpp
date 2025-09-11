@@ -40,14 +40,15 @@ int main() {
 
         if (input_features.size(0) > 0 && input_features.size(1) > 0) {
 
+            activation *sigmoid = new SIGMOID();
             network csv_net(batch_size, // batch size = number of samples
-                network::shape(input_features.size(0), new SIGMOID()), // input size = number of features
-                network::shape(10,               new SIGMOID()), // hidden layer with 10 neurons
-                network::shape(8,                new SIGMOID()), // hidden layer with 8 neurons
-                network::shape(targets.size(0),  new SIGMOID())  // output size = number of targets
+                network::shape(input_features.size(0), sigmoid), // input size = number of features
+                network::shape(10,                     sigmoid), // hidden layer with 10 neurons
+                network::shape(8,                      sigmoid), // hidden layer with 8 neurons
+                network::shape(targets.size(0),        sigmoid)  // output size = number of targets
             );
             
-            auto csv_trained = train(csv_net, input_features, targets, new MSE(), 10000, 0.01f, 0.01f);
+            auto csv_trained = train(csv_net, input_features, targets, new MSE(), 35000, 0.001f, 0.001f);
             auto csv_output = validate(csv_trained, validation_features, targets);
             printf("CSV Output error:\n");
             for (int k = 0; k < csv_output.size(2); k++)
@@ -58,6 +59,7 @@ int main() {
                     printf("]\n");
                 }
             printf("CSV training completed!\n");
+            delete sigmoid;
         } else printf("No data loaded from CSV. Please ensure 'Dataset.csv' exists and is properly formatted.\n");
         return 0;
 

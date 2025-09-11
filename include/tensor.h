@@ -45,6 +45,13 @@ namespace tensor {
         public:
 
             /**
+             * @brief Destructor for the tensor class.
+             * 
+             * Frees the allocated memory for the tensor data.
+             */
+            ~tensor() { delete[] data; } // Destructor to free allocated memory
+
+            /**
              * @brief Constructor for the tensor class with variable number of arguments.
              * 
              * Initializes the tensor with specified dimensions using variadic template.
