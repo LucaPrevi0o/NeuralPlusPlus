@@ -193,8 +193,8 @@ namespace neural {
                 ~layer() { if (function) delete function; }
             };
 
-            layer *layers; // Layers of the neural network
-            int size, a_number; // Number of layers in the neural network
+            layer *layers;     // Layers of the neural network
+            int size, batches; // Number of layers in the neural network and batch size
 
         public:
 
@@ -214,8 +214,6 @@ namespace neural {
                  * @param function Activation function for the layer
                  */
                 shape(int size, activation *function) : size(size), function(function) {}
-
-                //~shape() { if (function) delete function; }
             };
 
             /**
@@ -225,9 +223,9 @@ namespace neural {
              * @param args Shape of each layer (size and activation function)
              */
             template<typename... Args>
-            network(int n, Args... args) : size(sizeof...(args)), a_number(n) {
+            network(int n, Args... args) : size(sizeof...(args)), batches(n) {
 
-                if (a_number < 1) throw "a quantity here must be positive";
+                if (batches < 1) throw "Batch size must be at least 1";
 
                 shape dims[] = {args...};
                 layers = new layer[size]; // Allocate memory for the layers
@@ -235,7 +233,7 @@ namespace neural {
                 for (auto i = 0; i < size; i++) {
 
                     // Create neurons matrix: features x some number
-                    layers[i].neurons = tensor::matrix<float>(dims[i].size, a_number);
+                    layers[i].neurons = tensor::matrix<float>(dims[i].size, batches);
                     layers[i].function = dims[i].function -> clone(); // Clone the activation function for the layer
 
                     if (i < size - 1) {
@@ -263,7 +261,7 @@ namespace neural {
              * 
              * @param other The neural network to copy from
              */
-            network(const network& other) : size(other.size), a_number(other.a_number) {
+            network(const network& other) : size(other.size), batches(other.batches) {
 
                 layers = new layer[size]; // Allocate memory for the layers
                 for (int i = 0; i < other.size; i++) layers[i] = other.layers[i];
@@ -282,7 +280,7 @@ namespace neural {
                 delete[] layers; // Delete the old layers
 
                 size = other.size; // Copy the size of the network
-                a_number = other.a_number; // Copy the some number size
+                batches = other.batches; // Copy the some number size
                 layers = new layer[size]; // Allocate memory for the new layers
                 for (int i = 0; i < size; i++) layers[i] = other.layers[i];
 
@@ -309,18 +307,23 @@ namespace neural {
              */
             layer operator[](int index) const { return layers[index]; }
     
-            int get_the_number() const { return a_number; }
+            /**
+             * @brief Get the batch size of the neural network.
+             * 
+             * @return The batch size
+             */
+            int batch_size() const { return batches; }
 
             /**
              * @brief Forward pass through the network.
              * 
-             * @param input The input matrix for the first layer (features x a quantity_size)
+             * @param input The input matrix for the first layer
              * @return The output of the network after the forward pass
              */
             network forward(tensor::matrix<float> input) {
 
-                if (input.size(0) != layers[0].neurons.size(0)) throw "Input features must match first layer size";
-                if (input.size(1) != a_number) throw "Input samples must match network some number";
+                if (input.size(0) != layers[0].neurons.size(0)) throw "Input number of features must match first layer size";
+                if (input.size(1) != batches) throw "Input number of samples must match network batch size";
 
                 auto result(*this); // Create a copy of the current network
                 // Set input values to the first layer
@@ -357,25 +360,25 @@ namespace neural {
              * 
              * @param loss_function The loss function to use for training
              * @param learning_rate The learning rate for weight updates
-             * @param target The target output for the network (features x a quantity_size)
+             * @param target The target output for the network
              * @return The updated network after backpropagation
              */
             network backpropagate(loss *loss_function, float learning_rate, tensor::matrix<float> target) {
 
                 auto layer = layers[size - 1]; // Last layer of the network
 
-                if (target.size(0) != layer.neurons.size(0)) throw "Target features must match last layer size";
-                if (target.size(1) != a_number) throw "something wrong here";
+                if (target.size(0) != layer.neurons.size(0)) throw "Target number of features must match output layer size";
+                if (target.size(1) != batches) throw "Target number of samples must match network batch size";
 
                 auto result(*this); // Create a copy of the current network to modify
                 tensor::matrix<float> **deltas = new tensor::matrix<float>*[size]; // Arrays to store deltas for each layer
-                auto some_quantity = layers[0].neurons.size(1);
+                auto num_samples = layers[0].neurons.size(1);
 
                 // Calculate error for output layer
-                deltas[size - 1] = new tensor::matrix<float>(layer.neurons.size(0), some_quantity);
+                deltas[size - 1] = new tensor::matrix<float>(layer.neurons.size(0), num_samples);
 
                 // Compute delta for output layer: loss_derivative * activation_derivative (element-wise for each sample)
-                for (auto sample = 0; sample < some_quantity; sample++)
+                for (auto sample = 0; sample < num_samples; sample++)
                     for (auto i = 0; i < layer.neurons.size(0); i++) {
 
                         auto loss = loss_function -> df(layer.neurons(i, sample), target(i, sample));
@@ -388,9 +391,9 @@ namespace neural {
                 for (auto l = size - 2; l >= 1; l--) {
 
                     auto layer = layers[l];
-                    deltas[l] = new tensor::matrix<float>(layer.neurons.size(0), some_quantity);
+                    deltas[l] = new tensor::matrix<float>(layer.neurons.size(0), num_samples);
 
-                    for (auto sample = 0; sample < some_quantity; sample++)
+                    for (auto sample = 0; sample < num_samples; sample++)
                         for (auto i = 0; i < layer.neurons.size(0); i++) {
 
                             auto error = 0.0f;
@@ -410,18 +413,18 @@ namespace neural {
                         for (auto j = 0; j < layer.weights.size(1); j++) {
 
                             auto gradient = 0.0f;
-                            for (auto sample = 0; sample < some_quantity; sample++) 
+                            for (auto sample = 0; sample < num_samples; sample++) 
                                 gradient += (*(deltas[l + 1]))(i, sample) * layer.neurons(j, sample);
-                            gradient /= some_quantity;
+                            gradient /= num_samples;
 
                             result.layers[l].weights(i, j) = layer.weights(i, j) - learning_rate * gradient;
                         }
 
                         // Update biases: average bias gradient over some number
                         auto bias_gradient = 0.0f;
-                        for (auto sample = 0; sample < some_quantity; sample++) 
+                        for (auto sample = 0; sample < num_samples; sample++) 
                             bias_gradient += (*(deltas[l + 1]))(i, sample);
-                        bias_gradient /= some_quantity;
+                        bias_gradient /= num_samples;
 
                         result.layers[l].biases(i, 0) = layer.biases(i, 0) - learning_rate * bias_gradient;
                     }
@@ -439,8 +442,8 @@ namespace neural {
      * @brief Train the neural network using the specified loss function and training parameters.
      * 
      * @param n The neural network to train
-     * @param input The input matrix for training (features x a quantity_size)
-     * @param target The target output matrix for training (features x a quantity_size)
+     * @param input The input matrix for training
+     * @param target The target output matrix for training
      * @param loss The loss function to use for training
      * @param epochs The maximum number of training epochs
      * @param max_error The maximum acceptable error for early stopping
@@ -449,8 +452,8 @@ namespace neural {
      */
     network train(network n, tensor::matrix<float> input, tensor::matrix<float> target, loss* loss, int epochs, float max_error, float learning_rate) {
 
-        int total_samples = input.size(1);
-        int batch_size = n.get_the_number();
+        int total_samples = input.size(1); // Total number of samples in the dataset
+        int batch_size = n.batch_size();   // Calculate the number of batches (ceil division)
         int n_batches = (total_samples + batch_size - 1) / batch_size; // ceil division
 
         for (auto epoch = 0; epoch < epochs; epoch++) {
@@ -474,8 +477,9 @@ namespace neural {
                     for (int j = 0; j < batch_size; j++)
                         batch_target(i, j) = (start + j < end) ? target(i, start + j) : 0.0f;
 
-                n = n.forward(batch_input);
+                n = n.forward(batch_input); // Forward pass through the network current batch
 
+                // Check for early stopping condition
                 auto error = n[n.depth() - 1].neurons - batch_target;
                 for (auto i = 0; i < error.size(0); i++) {
 
@@ -486,7 +490,9 @@ namespace neural {
                     }
                     if (!early_stop) break;
                 }
-                n = n.backpropagate(loss, learning_rate, batch_target);
+
+                // Backpropagate error and update weights for current batch
+                n = n.backpropagate(loss, learning_rate, batch_target); 
             }
 
             if (early_stop) break;
@@ -498,12 +504,12 @@ namespace neural {
      * @brief Train the neural network using the specified loss function and training parameters.
      * 
      * @param n The neural network to train
-     * @param input The input matrix for training (features x a quantity_size)
-     * @param target The target output matrix for training (features x a quantity_size)
+     * @param input The input matrix for training
+     * @param target The target output matrix for training
      * @param loss The loss function to use for training
      * @param epochs The number of training epochs
      * @param learning_rate The learning rate for weight updates
-     * @return network The trained neural network
+     * @return The trained neural network
      */
     network train(network n, tensor::matrix<float> input, tensor::matrix<float> target, loss* loss, int epochs, float learning_rate) {
 
@@ -515,10 +521,18 @@ namespace neural {
         return n; // Return the trained network
     }
 
+    /**
+     * @brief Validate the neural network on a validation dataset.
+     * 
+     * @param n The trained neural network
+     * @param input The input matrix for validation
+     * @param target The target output matrix for validation
+     * @return A 3D tensor containing the output errors for each batch
+     */
     tensor::tensor<float, 3> validate(network n, tensor::matrix<float> input, tensor::matrix<float> target) {
 
-        int total_samples = input.size(1);
-        int batch_size = n.get_the_number();
+        int total_samples = input.size(1); // Total number of samples in the dataset
+        int batch_size = n.batch_size();   // Calculate the number of batches (ceil division)
         int n_batches = (total_samples + batch_size - 1) / batch_size;
         int num_targets = target.size(0);
 
@@ -542,9 +556,9 @@ namespace neural {
                 for (int j = 0; j < batch_size; j++)
                     batch_target(i, j) = (start + j < end) ? target(i, start + j) : 0.0f;
 
-            n = n.forward(batch_input);
+            n = n.forward(batch_input); // Forward pass through the network current batch
 
-            auto error = n[n.depth() - 1].neurons - batch_target;
+            auto error = n[n.depth() - 1].neurons - batch_target; // Calculate output error
 
             // Store errors for all batch positions (including padded zeros)
             for (int i = 0; i < num_targets; i++)
