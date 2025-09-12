@@ -1,5 +1,9 @@
 
 // this is a dummy comment
+// the previous comment was committed in repository NeuralPlusPlus via submodule "include"
+
+// this is another dummy comment
+// this comment should be committed in repository TensorPlusPlus via submodule "include/tensor"
 
 #ifndef TENSOR_H
 #define TENSOR_H
