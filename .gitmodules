@@ -1,0 +1,3 @@
+[submodule "tensor"]
+	path = tensor
+	url = https://github.com/LucaPrevi0o/TensorPlusPlus.git
