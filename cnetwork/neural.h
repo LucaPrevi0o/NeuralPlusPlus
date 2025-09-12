@@ -322,6 +322,8 @@ namespace neural {
              */
             tensor::matrix<float> forward(tensor::matrix<float> input) {
 
+                printf("Input size: %d x %d\n", input.size(0), input.size(1));
+
                 if (input.size(0) != layers[0].neurons.size(0)) throw "Input number of features must match first layer size";
                 if (input.size(1) != batches) throw "Input number of samples must match network batch size";
 
@@ -330,10 +332,8 @@ namespace neural {
                 // Propagate through each layer
                 for (auto i = 1; i < size; i++) {
 
-                    auto prev_layer = layers[i - 1]; // Previous layer
-                    auto curr_layer = layers[i];     // Current layer
-                    auto activation = prev_layer.weights * prev_layer.neurons + prev_layer.biases; // Compute weighted activation: W * input + b
-                    curr_layer.neurons = curr_layer.function -> f(activation); // Apply activation function
+                    auto activation = layers[i - 1].weights * layers[i - 1].neurons + layers[i - 1].biases; // Compute weighted activation: W * input + b
+                    layers[i].neurons = layers[i].function -> f(activation); // Apply activation function
                 }
 
                 // Restituisci solo la matrice dei neuroni dell'ultimo layer
@@ -467,6 +467,7 @@ namespace neural {
                         batch_target(i, j) = (start + j < end) ? target(i, start + j) : 0.0f;
 
                 auto output = n.forward(batch_input); // Forward pass through the network current batch
+                printf("Output size: %d x %d\n", output.size(0), output.size(1));
 
                 // Check for early stopping condition
                 auto error = output - batch_target;
