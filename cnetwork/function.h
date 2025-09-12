@@ -1,7 +1,7 @@
 #ifndef FUNCTION_H
 #define FUNCTION_H
 
-#include "tensor.h"
+#include "tensor/tensor.h"
 
 namespace neural {
 

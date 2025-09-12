@@ -3,7 +3,7 @@
 
 #include <math.h>
 #include <stdio.h>
-#include "tensor.h"
+#include "tensor/tensor.h"
 #include "function.h"
 
 /**
