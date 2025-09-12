@@ -318,26 +318,26 @@ namespace neural {
              * @brief Forward pass through the network.
              * 
              * @param input The input matrix for the first layer
-             * @return The output of the network after the forward pass
+             * @return The output matrix of the last layer after the forward pass
              */
-            network forward(tensor::matrix<float> input) {
+            tensor::matrix<float> forward(tensor::matrix<float> input) {
 
                 if (input.size(0) != layers[0].neurons.size(0)) throw "Input number of features must match first layer size";
                 if (input.size(1) != batches) throw "Input number of samples must match network batch size";
 
-                auto result(*this); // Create a copy of the current network to modify
-                result.layers[0].neurons = input; // Set input values to the first layer
+                layers[0].neurons = input; // Set input values to the first layer
 
                 // Propagate through each layer
                 for (auto i = 1; i < size; i++) {
 
-                    auto prev_layer = result.layers[i - 1]; // Previous layer
-                    auto curr_layer = result.layers[i];     // Current layer
+                    auto prev_layer = layers[i - 1]; // Previous layer
+                    auto curr_layer = layers[i];     // Current layer
                     auto activation = prev_layer.weights * prev_layer.neurons + prev_layer.biases; // Compute weighted activation: W * input + b
                     curr_layer.neurons = curr_layer.function -> f(activation); // Apply activation function
                 }
 
-                return result; // Return new network with updated layer values  
+                // Restituisci solo la matrice dei neuroni dell'ultimo layer
+                return layers[size - 1].neurons;
             }
 
             /**
@@ -466,10 +466,10 @@ namespace neural {
                     for (int j = 0; j < batch_size; j++)
                         batch_target(i, j) = (start + j < end) ? target(i, start + j) : 0.0f;
 
-                n = n.forward(batch_input); // Forward pass through the network current batch
+                auto output = n.forward(batch_input); // Forward pass through the network current batch
 
                 // Check for early stopping condition
-                auto error = n[n.depth() - 1].neurons - batch_target;
+                auto error = output - batch_target;
                 
                 auto avg_error = 0.0f;
                 for (auto i = 0; i < error.size(0); i++) {
@@ -506,7 +506,7 @@ namespace neural {
 
         for (auto epoch = 0; epoch < epochs; epoch++) {
 
-            n = n.forward(input); // Forward pass through the network
+            auto output = n.forward(input); // Forward pass through the network
             n = n.backpropagate(loss, learning_rate, target); // Backpropagate error and update weights
         }
         return n; // Return the trained network
@@ -547,9 +547,9 @@ namespace neural {
                 for (int j = 0; j < batch_size; j++)
                     batch_target(i, j) = (start + j < end) ? target(i, start + j) : 0.0f;
 
-            n = n.forward(batch_input); // Forward pass through the network current batch
+            auto output = n.forward(batch_input); // Forward pass through the network current batch
 
-            auto error = n[n.depth() - 1].neurons - batch_target; // Calculate output error
+            auto error = output - batch_target; // Calculate output error
 
             // Store errors for all batch positions (including padded zeros)
             for (int i = 0; i < num_targets; i++)
