@@ -322,8 +322,6 @@ namespace neural {
              */
             tensor::matrix<float> forward(tensor::matrix<float> input) {
 
-                printf("Input size: %d x %d\n", input.size(0), input.size(1));
-
                 if (input.size(0) != layers[0].neurons.size(0)) throw "Input number of features must match first layer size";
                 if (input.size(1) != batches) throw "Input number of samples must match network batch size";
 
@@ -349,8 +347,6 @@ namespace neural {
              * @return The updated network after backpropagation
              */
             network backpropagate(loss *loss_function, float learning_rate, tensor::matrix<float> target) {
-
-                printf("Target size: %d x %d\n", target.size(0), target.size(1));
 
                 auto layer = layers[size - 1]; // Last layer of the network
                 auto num_features = layer.neurons.size(0); // Number of features in the output layer
@@ -386,37 +382,33 @@ namespace neural {
                         for (auto i = 0; i < layer.neurons.size(0); i++) {
 
                             auto error = 0.0f;
-                            for (auto j = 0; j < layers[l + 1].neurons.size(0); j++) 
-                                error += layer.weights(j, i) * (*(deltas[l + 1]))(j, sample);
+                            for (auto j = 0; j < layers[l + 1].neurons.size(0); j++) error += layer.weights(j, i) * (*(deltas[l + 1]))(j, sample);
                             auto activation = layer.function -> df(layer.neurons(i, sample));
                             (*(deltas[l]))(i, sample) = error * activation;
                         }
                 }
 
-                // Update weights and biases with averaged gradients over the some number
+                // Update weights and biases with averaged gradients over all samples
                 for (auto l = 0; l < size - 1; l++) {
 
-                    layer = layers[l];
-                    for (auto i = 0; i < layer.weights.size(0); i++) {
+                    auto layer   = layers[l];
+                    auto delta   = *(deltas[l + 1]);
+                    auto neurons = layer.neurons;
 
-                        for (auto j = 0; j < layer.weights.size(1); j++) {
+                    // gradient_matrix = delta * T(neurons) / num_samples
+                    auto gradient_matrix = (delta * tensor::T(neurons)) * (1.0f / num_samples);
 
-                            auto gradient = 0.0f;
-                            for (auto sample = 0; sample < num_samples; sample++) 
-                                gradient += (*(deltas[l + 1]))(i, sample) * layer.neurons(j, sample);
-                            gradient /= num_samples;
+                    // bias_gradient = mean(delta, axis=1)
+                    tensor::matrix<float> bias_gradient(layer.biases.size(0), 1);
+                    for (int i = 0; i < layer.biases.size(0); i++) {
 
-                            result.layers[l].weights(i, j) = layer.weights(i, j) - learning_rate * gradient;
-                        }
-
-                        // Update biases: average bias gradient over some number
-                        auto bias_gradient = 0.0f;
-                        for (auto sample = 0; sample < num_samples; sample++) 
-                            bias_gradient += (*(deltas[l + 1]))(i, sample);
-                        bias_gradient /= num_samples;
-
-                        result.layers[l].biases(i, 0) = layer.biases(i, 0) - learning_rate * bias_gradient;
+                        float sum = 0.0f;
+                        for (int s = 0; s < num_samples; s++) sum += delta(i, s);
+                        bias_gradient(i, 0) = sum / num_samples;
                     }
+
+                    result.layers[l].weights = layer.weights - learning_rate * gradient_matrix;
+                    result.layers[l].biases = layer.biases - learning_rate * bias_gradient;
                 }
 
                 // Clean up delta matrices
@@ -446,9 +438,10 @@ namespace neural {
         int n_batches = (total_samples + batch_size - 1) / batch_size; // ceil division
 
         for (auto epoch = 0; epoch < epochs; epoch++) {
-            bool early_stop = true;
 
+            bool early_stop = true;
             for (int batch = 0; batch < n_batches; batch++) {
+
                 int start = batch * batch_size;
                 int end = start + batch_size < total_samples ? start + batch_size : total_samples;
                 int current_batch_size = end - start;
@@ -467,7 +460,6 @@ namespace neural {
                         batch_target(i, j) = (start + j < end) ? target(i, start + j) : 0.0f;
 
                 auto output = n.forward(batch_input); // Forward pass through the network current batch
-                printf("Output size: %d x %d\n", output.size(0), output.size(1));
 
                 // Check for early stopping condition
                 auto error = output - batch_target;
