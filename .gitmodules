@@ -1,3 +1,4 @@
 [submodule "tensor"]
-	path = tensor
-	url = https://github.com/LucaPrevi0o/TensorPlusPlus.git
+	path   = tensor
+	url    = https://github.com/LucaPrevi0o/TensorPlusPlus.git
+	branch = main
