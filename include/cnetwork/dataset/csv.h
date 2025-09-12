@@ -1,7 +1,7 @@
 #ifndef CSV_H
 #define CSV_H
 
-#include "tensor.h"
+#include "tensor/tensor.h"
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdlib.h>

@@ -1,5 +1,5 @@
 
-#include "include/tensor.h"
+#include "include/tensor/tensor.h"
 #include "include/cnetwork/neural.h"
 #include "include/cnetwork/dataset/csv.h"
 #include <stdio.h>
