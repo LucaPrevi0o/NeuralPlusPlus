@@ -334,15 +334,8 @@ namespace neural {
                 // Propagate through each layer
                 for (auto i = 0; i < size - 1; i++) {
 
-                    // Compute weighted sum: W * input
-                    auto sum = result.layers[i].weights * result.layers[i].neurons;
-
-                    // Add biases to each column (broadcast biases across some number)
-                    for (auto col = 0; col < sum.size(1); col++)
-                        for (auto row = 0; row < sum.size(0); row++) {
-                            auto value = sum(row, col) + result.layers[i].biases(row, 0);
-                            sum(row, col) = value;
-                        }
+                    // Compute weighted sum: W * input + b
+                    auto sum = result.layers[i].weights * result.layers[i].neurons + result.layers[i].biases; // Broadcasting biases
 
                     // Apply activation function element-wise and store in next layer
                     for (auto row = 0; row < sum.size(0); row++)
