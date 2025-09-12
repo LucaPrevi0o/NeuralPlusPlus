@@ -331,16 +331,10 @@ namespace neural {
                 // Propagate through each layer
                 for (auto i = 1; i < size; i++) {
 
-                    auto layer = result.layers[i - 1]; // Previous layer
-                    auto activation = layer.weights * layer.neurons + layer.biases; // Compute weighted activation: W * input + b
-
-                    // Apply activation function element-wise and store in next layer
-                    for (auto row = 0; row < activation.size(0); row++)
-                        for (auto col = 0; col < activation.size(1); col++) {
-
-                            auto value = result.layers[i].function -> f(activation(row, col));
-                            result.layers[i].neurons(row, col) = value;
-                        }
+                    auto prev_layer = result.layers[i - 1]; // Previous layer
+                    auto curr_layer = result.layers[i];     // Current layer
+                    auto activation = prev_layer.weights * prev_layer.neurons + prev_layer.biases; // Compute weighted activation: W * input + b
+                    curr_layer.neurons = curr_layer.function -> f(activation); // Apply activation function
                 }
 
                 return result; // Return new network with updated layer values  
@@ -356,7 +350,10 @@ namespace neural {
              */
             network backpropagate(loss *loss_function, float learning_rate, tensor::matrix<float> target) {
 
+                printf("Target size: %d x %d\n", target.size(0), target.size(1));
+
                 auto layer = layers[size - 1]; // Last layer of the network
+                auto num_features = layer.neurons.size(0); // Number of features in the output layer
 
                 if (target.size(0) != layer.neurons.size(0)) throw "Target number of features must match output layer size";
                 if (target.size(1) != batches) throw "Target number of samples must match network batch size";
@@ -366,6 +363,7 @@ namespace neural {
                 auto num_samples = layers[0].neurons.size(1);
 
                 // Calculate error for output layer
+                for (auto i = 0; i < size; i++) deltas[i] = nullptr; // Initialize delta pointers to null
                 deltas[size - 1] = new tensor::matrix<float>(layer.neurons.size(0), num_samples);
 
                 // Compute delta for output layer: loss_derivative * activation_derivative (element-wise for each sample)
@@ -381,7 +379,7 @@ namespace neural {
                 // Backpropagate errors through hidden layers
                 for (auto l = size - 2; l >= 1; l--) {
 
-                    auto layer = layers[l];
+                    layer = layers[l];
                     deltas[l] = new tensor::matrix<float>(layer.neurons.size(0), num_samples);
 
                     for (auto sample = 0; sample < num_samples; sample++)
@@ -398,7 +396,7 @@ namespace neural {
                 // Update weights and biases with averaged gradients over the some number
                 for (auto l = 0; l < size - 1; l++) {
 
-                    auto layer = layers[l];
+                    layer = layers[l];
                     for (auto i = 0; i < layer.weights.size(0); i++) {
 
                         for (auto j = 0; j < layer.weights.size(1); j++) {
@@ -472,6 +470,8 @@ namespace neural {
 
                 // Check for early stopping condition
                 auto error = n[n.depth() - 1].neurons - batch_target;
+                
+                auto avg_error = 0.0f;
                 for (auto i = 0; i < error.size(0); i++) {
 
                     for (auto j = 0; j < current_batch_size; j++) if (abs(error(i, j)) >= max_error) {
