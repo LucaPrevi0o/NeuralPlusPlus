@@ -90,6 +90,21 @@ namespace neural {
             virtual float f(float x, float y) const = 0;
 
             /**
+             * @brief Compute the function value for two matrix inputs.
+             * 
+             * @param x First input matrix
+             * @param y Second input matrix
+             * @return Matrix of function values
+             */
+            tensor::matrix<float> f(const tensor::matrix<float>& x, const tensor::matrix<float>& y) const {
+
+                auto result = tensor::matrix<float>(x.size(0), x.size(1));
+                for (int i = 0; i < x.size(0); i++)
+                    for (int j = 0; j < x.size(1); j++) result(i, j) = f(x(i, j), y(i, j));
+                return result;
+            }
+
+            /**
              * @brief Compute the derivative of the function for two scalar inputs.
              * 
              * @param x First input value
@@ -97,6 +112,21 @@ namespace neural {
              * @return Derivative value
              */
             virtual float df(float x, float y) const = 0;
+
+            /**
+             * @brief Compute the derivative of the function for two matrix inputs.
+             * 
+             * @param x First input matrix
+             * @param y Second input matrix
+             * @return Matrix of derivative values
+             */
+            tensor::matrix<float> df(const tensor::matrix<float>& x, const tensor::matrix<float>& y) const {
+
+                auto result = tensor::matrix<float>(x.size(0), x.size(1));
+                for (int i = 0; i < x.size(0); i++)
+                    for (int j = 0; j < x.size(1); j++) result(i, j) = df(x(i, j), y(i, j));
+                return result;
+            }
 
             virtual loss *clone() const = 0;
 
