@@ -8,19 +8,18 @@ La classe `neural::network`, all'interno del proprio namespace, implementa funzi
 ## Struttura del progetto
 
 ```
-include/
-  tensor/
-    tensor.h       # Classe tensor generica multi-dimensionale, alias matrix e tuple, funzioni matematiche
-  cnetwork/
-    function.h     # Funzioni di attivazione, operazioni matematiche per reti neurali
-    neural.h       # Strutture e algoritmi per reti neurali (layer, forward, backward, training)
+tensor/
+    tensor.h    # Classe tensor generica multi-dimensionale, alias matrix e tuple, funzioni matematiche
+cnetwork/
+    function.h  # Funzioni di attivazione, operazioni matematiche per reti neurali
+    neural.h    # Strutture e algoritmi per reti neurali (layer, forward, backward, training)
     dataset/
-      csv.h        # Caricamento e parsing di dataset CSV, split in features/target
+        csv.h   # Caricamento e parsing di dataset CSV, split in features/target
 ```
 
 ## Funzionalità principali
 
-### [tensor.h](/include/tensor/tensor.h) (Libreria esterna)
+### [tensor.h](/tensor/tensor.h) (Libreria esterna)
 - **Classe template `tensor<A, N>`**: array multi-dimensionale generico
 - **Alias `matrix<A>`**: matrice 2D
 - **Alias `tuple<A>`**: vettore 1D
@@ -28,17 +27,17 @@ include/
 - **Funzioni matematiche**: trasposizione, traccia, determinante, sottostruttura, aggiunta
 - **Gestione memoria**: costruttori, copy, assegnazione, confronto
 
-### [function.h](/include/cnetwork/function.h)
+### [function.h](/cnetwork/function.h)
 - **Funzioni di attivazione**: sigmoid, relu, tanh, softmax
 - **Derivate delle funzioni**: per backpropagation
 - **Operazioni matematiche**: normalizzazione, funzioni di costo
 
-### [neural.h](/include/cnetwork/neural.h)
+### [neural.h](/cnetwork/neural.h)
 - **Definizione layer**: fully connected, attivazione, output
 - **Algoritmi di training**: forward, backward, aggiornamento pesi
 - **Gestione rete**: creazione, configurazione, inferenza
 
-### [csv.h](/include/cnetwork/dataset/csv.h)
+### [csv.h](/cnetwork/dataset/csv.h)
 - **Caricamento CSV**: parsing efficiente di file CSV
 - **Estrazione labels**: lettura delle intestazioni
 - **Split dataset**: separazione automatica in features e target
