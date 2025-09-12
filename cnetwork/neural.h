@@ -325,23 +325,21 @@ namespace neural {
                 if (input.size(0) != layers[0].neurons.size(0)) throw "Input number of features must match first layer size";
                 if (input.size(1) != batches) throw "Input number of samples must match network batch size";
 
-                auto result(*this); // Create a copy of the current network
-                // Set input values to the first layer
-                for (auto i = 0; i < input.size(0); i++)
-                    for (auto j = 0; j < input.size(1); j++) 
-                        result.layers[0].neurons(i, j) = input(i, j);
+                auto result(*this); // Create a copy of the current network to modify
+                result.layers[0].neurons = input; // Set input values to the first layer
 
                 // Propagate through each layer
-                for (auto i = 0; i < size - 1; i++) {
+                for (auto i = 1; i < size; i++) {
 
-                    // Compute weighted sum: W * input + b
-                    auto sum = result.layers[i].weights * result.layers[i].neurons + result.layers[i].biases; // Broadcasting biases
+                    auto layer = result.layers[i - 1]; // Previous layer
+                    auto activation = layer.weights * layer.neurons + layer.biases; // Compute weighted activation: W * input + b
 
                     // Apply activation function element-wise and store in next layer
-                    for (auto row = 0; row < sum.size(0); row++)
-                        for (auto col = 0; col < sum.size(1); col++) {
-                            auto activated_value = result.layers[i + 1].function -> f(sum(row, col));
-                            result.layers[i + 1].neurons(row, col) = activated_value;
+                    for (auto row = 0; row < activation.size(0); row++)
+                        for (auto col = 0; col < activation.size(1); col++) {
+
+                            auto value = result.layers[i].function -> f(activation(row, col));
+                            result.layers[i].neurons(row, col) = value;
                         }
                 }
 
