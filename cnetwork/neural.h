@@ -196,6 +196,11 @@ namespace neural {
             layer *layers;     // Layers of the neural network
             int size, batches; // Number of layers in the neural network and batch size
 
+            tensor::matrix<float> Z(int L) { return layers[L - 1].weights * layers[L - 1].neurons + layers[L - 1].biases; }
+            tensor::matrix<float> dA_over_dZ(int L) { return layers[L].function -> df(Z(L)); }
+            tensor::matrix<float> dZ_over_dW(int L) { return layers[L - 1].neurons; }
+            tensor::matrix<float> dZ_over_dA(int L) { return layers[L - 1].weights; }
+
         public:
 
             /**
@@ -317,25 +322,17 @@ namespace neural {
             /**
              * @brief Forward pass through the network.
              * 
-             * @param input The input matrix for the first layer
+             * @param input The input matrix for the first layer (`batch_size` x `features`)
              * @return The output matrix of the last layer after the forward pass
              */
             tensor::matrix<float> forward(tensor::matrix<float> input) {
 
-                if (input.size(0) != layers[0].neurons.size(0)) throw "Input number of features must match first layer size";
-                if (input.size(1) != batches) throw "Input number of samples must match network batch size";
+                if (input.size(1) != layers[0].neurons.size(0)) throw "Input number of features must match first layer size";
+                if (input.size(0) != batches) throw "Input number of samples must match network batch size";
 
-                layers[0].neurons = input; // Set input values to the first layer
-
-                // Propagate through each layer
-                for (auto i = 1; i < size; i++) {
-
-                    auto activation = layers[i - 1].weights * layers[i - 1].neurons + layers[i - 1].biases; // Compute weighted activation: W * input + b
-                    layers[i].neurons = layers[i].function -> f(activation); // Apply activation function
-                }
-
-                // Restituisci solo la matrice dei neuroni dell'ultimo layer
-                return layers[size - 1].neurons;
+                layers[0].neurons = tensor::T(input); // Set input values to the first layer
+                for (auto i = 1; i < size; i++) layers[i].neurons = layers[i].function -> f(Z(i)); // Forward pass through the layers
+                return layers[size - 1].neurons; // Return the output of the last layer
             }
 
             /**
@@ -348,74 +345,20 @@ namespace neural {
              */
             network backpropagate(loss *loss_function, float learning_rate, tensor::matrix<float> target) {
 
-                auto layer = layers[size - 1]; // Last layer of the network
-                auto num_features = layer.neurons.size(0); // Number of features in the output layer
+                if (target.size(1) != layers[size - 1].neurons.size(0)) throw "Target number of features must match output layer size";
+                if (target.size(0) != batches) throw "Target number of samples must match network batch size";
 
-                if (target.size(0) != layer.neurons.size(0)) throw "Target number of features must match output layer size";
-                if (target.size(1) != batches) throw "Target number of samples must match network batch size";
+                auto result(*this);
+                auto dC_dA = loss_function -> df(layers[size - 1].neurons, tensor::T(target));
 
-                auto result(*this); // Create a copy of the current network to modify
-                tensor::matrix<float> **deltas = new tensor::matrix<float>*[size]; // Arrays to store deltas for each layer
-                auto num_samples = layers[0].neurons.size(1);
+                for (auto i = size - 1; i > 0; i--) {
 
-                // Calculate error for output layer
-                for (auto i = 0; i < size; i++) deltas[i] = nullptr; // Initialize delta pointers to null
-                deltas[size - 1] = new tensor::matrix<float>(layer.neurons.size(0), num_samples);
-
-                // Compute delta for output layer: loss_derivative * activation_derivative (element-wise for each sample)
-                for (auto sample = 0; sample < num_samples; sample++)
-                    for (auto i = 0; i < layer.neurons.size(0); i++) {
-
-                        auto loss = loss_function -> df(layer.neurons(i, sample), target(i, sample));
-                        auto activation = layers[size - 1].function -> df(layer.neurons(i, sample));
-                        auto delta = loss * activation;
-                        (*(deltas[size - 1]))(i, sample) = delta; // Store delta for output neuron
-                    }
-
-                // Backpropagate errors through hidden layers
-                for (auto l = size - 2; l >= 1; l--) {
-
-                    layer = layers[l];
-                    deltas[l] = new tensor::matrix<float>(layer.neurons.size(0), num_samples);
-
-                    for (auto sample = 0; sample < num_samples; sample++)
-                        for (auto i = 0; i < layer.neurons.size(0); i++) {
-
-                            auto error = 0.0f;
-                            for (auto j = 0; j < layers[l + 1].neurons.size(0); j++) error += layer.weights(j, i) * (*(deltas[l + 1]))(j, sample);
-                            auto activation = layer.function -> df(layer.neurons(i, sample));
-                            (*(deltas[l]))(i, sample) = error * activation;
-                        }
+                    auto dC_dZ = tensor::dot(dA_over_dZ(i), dC_dA);
+                    auto dC_dW = dZ_over_dW(i) * tensor::T(dC_dZ);
+                    result[i - 1].weights -= learning_rate * tensor::T(dC_dW);
+                    dC_dA = tensor::T(tensor::T(dC_dZ) * dZ_over_dA(i));
                 }
-
-                // Update weights and biases with averaged gradients over all samples
-                for (auto l = 0; l < size - 1; l++) {
-
-                    auto layer   = layers[l];
-                    auto delta   = *(deltas[l + 1]);
-                    auto neurons = layer.neurons;
-
-                    // gradient_matrix = delta * T(neurons) / num_samples
-                    auto gradient_matrix = (delta * tensor::T(neurons)) * (1.0f / num_samples);
-
-                    // bias_gradient = mean(delta, axis=1)
-                    tensor::matrix<float> bias_gradient(layer.biases.size(0), 1);
-                    for (int i = 0; i < layer.biases.size(0); i++) {
-
-                        float sum = 0.0f;
-                        for (int s = 0; s < num_samples; s++) sum += delta(i, s);
-                        bias_gradient(i, 0) = sum / num_samples;
-                    }
-
-                    result.layers[l].weights = layer.weights - learning_rate * gradient_matrix;
-                    result.layers[l].biases = layer.biases - learning_rate * bias_gradient;
-                }
-
-                // Clean up delta matrices
-                for (auto i = 1; i < size; i++) delete deltas[i];
-                delete[] deltas;
-
-                return result; // Return new network with updated weights and biases
+                return result;
             }
     };
 
