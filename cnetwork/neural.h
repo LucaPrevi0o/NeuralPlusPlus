@@ -350,23 +350,12 @@ namespace neural {
 
                 auto result(*this);
                 auto dC_dA = loss_function -> df(layers[size - 1].neurons, tensor::T(target));
-                printf("Loss: ");
-                for (auto i = 0; i < dC_dA.size(0); i++) {
-                    for (auto j = 0; j < dC_dA.size(1); j++) printf("%c%.3f ", dC_dA(i, j) >= 0 ? ' ' : 0, dC_dA(i, j));
-                    printf("\n");
-                }
 
                 for (auto i = size - 1; i > 0; i--) {
 
                     auto dC_dZ = tensor::dot(dA_over_dZ(i), dC_dA);
                     auto dC_dW = dZ_over_dW(i) * tensor::T(dC_dZ);
-                    auto quantity = learning_rate * tensor::T(dC_dW);
-                    result[i - 1].weights -= quantity;
-                    printf("Updated weights (layer %d):\n", i);
-                    for (auto j = 0; j < result[i - 1].weights.size(0); j++) {
-                        for (auto k = 0; k < result[i - 1].weights.size(1); k++) printf("%c%.3f ", result[i - 1].weights(j, k));
-                        printf("\n");
-                    }
+                    result.layers[i - 1].weights = layers[i - 1].weights - learning_rate * tensor::T(dC_dW);
                     dC_dA = tensor::T(tensor::T(dC_dZ) * dZ_over_dA(i));
                 }
                 return result;
