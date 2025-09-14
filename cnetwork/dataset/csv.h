@@ -138,7 +138,7 @@ namespace neural {
 
     public:
 
-        static tensor::matrix<float> load(const char* filename, char delimiter = ',') {
+        static tensor::matrix<float> load(const char* filename, char delimiter = ',', int max_rows = 0) {
             
             int fd = open_file(filename);
             if (fd < 0) return tensor::matrix<float>(0, 0);
@@ -148,6 +148,8 @@ namespace neural {
             int buf_pos = 0;
             char line[LINE_SIZE];
             int line_pos = 0;
+
+            int num_rows_read = 0;
 
             // Prima passata: conta righe e colonne
             int n_rows = 0, n_cols = 0;
@@ -168,6 +170,8 @@ namespace neural {
             // Se non ci sono dati
             if (n_rows == 0 || n_cols == 0) return tensor::matrix<float>(0, 0);
 
+            if (max_rows && n_rows > max_rows) n_rows = max_rows;
+
             // Seconda passata: leggi i dati
             fd = open_file(filename);
             if (fd < 0) return tensor::matrix<float>(0, 0);
@@ -183,11 +187,11 @@ namespace neural {
             
             // Temporary buffer for parsing a row
             float* temp_row = new float[n_cols];
-            
+
             while ((bytes_read = read(fd, buf, BUF_SIZE)) > 0) {
 
                 buf_pos = 0;
-                while (buf_pos < bytes_read) if (read_line(buf_pos, bytes_read, buf, line, line_pos)) {
+                while ((max_rows && num_rows_read <= max_rows) && buf_pos < bytes_read) if (read_line(buf_pos, bytes_read, buf, line, line_pos)) {
 
                     if (first_line) first_line = false;
                     else {
@@ -197,8 +201,8 @@ namespace neural {
                         for (int col = 0; col < n_cols; col++) data(col, row) = temp_row[col];
                         row++;
                     }
+                num_rows_read++;
                 }
-
             }
             close(fd);
             delete[] temp_row;
@@ -206,9 +210,9 @@ namespace neural {
         }
 
         // New method to load data and split into features and targets
-        static data load_split(const char* filename, int target_cols = 1, char delimiter = ',') {
+        static data load_split(const char* filename, int target_cols = 1, int max_rows = 0, char delimiter = ',') {
 
-            auto full_data = load(filename, delimiter);
+            auto full_data = load(filename, delimiter, max_rows);
             if (full_data.size(0) == 0 || full_data.size(1) == 0)return data(0, 0, 0);
 
             int n_features = full_data.size(0) - target_cols;
