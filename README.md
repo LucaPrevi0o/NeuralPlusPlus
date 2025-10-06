@@ -1,4 +1,5 @@
 # Neural++ - Libreria per motori neurali MLP in C++
+[![CC BY-NC-SA 4.0][cc-by-nc-sa-shield]][cc-by-nc-sa]
 
 Neural++ è una libreria C++ per la manipolazione di reti neurali basate su MLP (Multi-Layer Perceptron), pensata per applicazioni di machine learning e data science.
 
@@ -130,4 +131,14 @@ int main() {
 - @[LucaPrevi0o](http://github.com/LucaPrevi0o) - Luca Previati
 
 ## Licenza
-MIT
+This work is licensed under a [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License][cc-by-nc-sa].
+Any modification to this software is permitted.
+* **Any commercial use of this software is *prohibited***. This software is intended to be used and shared without payment.
+* Any re-distribution of this software is allowed, **with attribution** of the original source.
+* Any re-distribution of this software *must* be provided with **share-alike license**.
+
+[![CC BY-NC-SA 4.0][cc-by-nc-sa-image]][cc-by-nc-sa]
+
+[cc-by-nc-sa]: http://creativecommons.org/licenses/by-nc-sa/4.0/
+[cc-by-nc-sa-image]: https://licensebuttons.net/l/by-nc-sa/4.0/88x31.png
+[cc-by-nc-sa-shield]: https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg
